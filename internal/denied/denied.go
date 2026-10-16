@@ -1,6 +1,7 @@
 // Package denied is what a viewer gets when the gibson is full: the scene
 // frozen in its held moment, one scan line sweeping down it, and then a red
-// ACCESS DENIED with a line from Hackers (1995) before the session closes.
+// ACCESS DENIED with a movie line, Hackers (1995) to begin with, before the
+// session closes.
 //
 // It's built to be cheap, since it only runs when the server is busy: one
 // frame is rendered, and the sweep redraws only the rows it passes.
@@ -10,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math/rand/v2"
 	"strings"
 	"time"
 
@@ -22,22 +22,8 @@ import (
 	r "github.com/spechtlabs/gibson/pkg/render"
 )
 
-// Quotes are the lines a turned-away viewer may get.
-var Quotes = []string{
-	"HACK THE PLANET!",
-	"Mess with the best, die like the rest.",
-	"There is no right and wrong. There's only fun and boring.",
-	"Hackers of the world, unite!",
-	"Type \"cookie\", you idiot.",
-	"Never fear, I is here.",
-	"RISC architecture is gonna change everything.",
-	"The pool on the roof must have a leak.",
-	"Remember, hacking is more than just a crime. It's a survival trait.",
-}
-
 const (
-	heading     = "ACCESS DENIED"
-	attribution = "— HACKERS (1995)"
+	heading = "ACCESS DENIED"
 
 	// holdAt is the moment the scene freezes at: everything is up, the
 	// title's sheen is off to the side and no glitch is tearing it.
@@ -50,13 +36,13 @@ const (
 // like look, with terminals capped at maxCols×maxRows.
 func Handler(look scene.Look, maxCols, maxRows int) ssh.Handler {
 	return func(sess ssh.Session) {
-		quote := Quote()
+		quote := Pick()
 		pty, _, ok := sess.Pty()
 		w, h := min(pty.Window.Width, maxCols), min(pty.Window.Height, maxRows)
 		// session words are all known names, so this can't fail
 		sc, err := look.Override(sess.Command()).New()
 		if !ok || w < 20 || h < 8 || err != nil {
-			wish.Fatalln(sess, heading+": "+quote)
+			wish.Fatalln(sess, heading+": "+quote.Text+" "+quote.Attribution())
 			return
 		}
 		_ = Play(sess.Context(), sess, sc, quote, w, h)
@@ -64,13 +50,10 @@ func Handler(look scene.Look, maxCols, maxRows int) ssh.Handler {
 	}
 }
 
-// Quote picks one of [Quotes] at random.
-func Quote() string { return Quotes[rand.IntN(len(Quotes))] }
-
 // Play plays the denial for sc on a w×h terminal behind out, and leaves it
 // on the screen. It stops early, with ctx's error, when ctx is done, and
 // with the write error when out stops taking writes.
-func Play(ctx context.Context, out io.Writer, sc *scene.Scene, quote string, w, h int) error {
+func Play(ctx context.Context, out io.Writer, sc *scene.Scene, quote Quote, w, h int) error {
 	frame := sc.Render(holdAt, w, h).Clone()
 	glow := sc.Palette().Grad[1].Lerp(r.RGB{R: 1, G: 1, B: 1}, 0.3)
 
@@ -105,7 +88,7 @@ func Play(ctx context.Context, out io.Writer, sc *scene.Scene, quote string, w, 
 	}
 
 	denied := frame.Clone()
-	banner.New(heading, quote, banner.WithAttribution(attribution)).Apply(denied)
+	banner.New(heading, quote.Text, banner.WithAttribution(quote.Attribution())).Apply(denied)
 	for y := range h {
 		row(&b, denied, y)
 	}

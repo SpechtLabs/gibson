@@ -106,8 +106,8 @@ everywhere:
 
 Handshakes time out after 10s, and terminal sizes are capped at 400×150.
 A viewer turned away at `ssh.max-sessions` gets the scene frozen, a scan line
-sweeping down it and a red ACCESS DENIED with a line from Hackers (1995);
-`gibson denied` previews it.
+sweeping down it and a red ACCESS DENIED with a movie line, picked at random
+from `internal/denied/quotes.go`; `gibson denied` previews it.
 Bandwidth is about 0.5 MB/s per viewer at 30 fps in a 120×40 terminal, so
 `fps: 20` is kinder over the internet.
 
