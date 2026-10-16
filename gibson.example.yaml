@@ -1,0 +1,35 @@
+# gibson configuration. Every key is optional and shows its default.
+#
+# gibson reads --config, or else the first gibson.yaml in ., $XDG_CONFIG_HOME/gibson
+# (~/.config/gibson) and /etc/gibson. Every key can also be set from the
+# environment: GIBSON_ plus the key in upper case with "." and "-" as "_",
+# e.g. GIBSON_THEME or GIBSON_SSH_HOST_KEY. Flags win over the environment,
+# which wins over this file.
+
+# Look, used by every command. An SSH session can override these by naming a
+# theme, specimen or vessel as its command: ssh -t host -p 2222 dodeca specht
+theme: synth # color theme: synth | specht | umbrella
+specimen: bird # what floats in the vessel: bird | blob
+vessel: hex # shape of the containment vessel: hex | dodeca
+tagline: "CONTAINMENT NOMINAL // WELCOME BACK, OPERATOR" # text typed under the title
+fps: 30 # frames per second
+pausable: false # TEMP: space toggles pause instead of quitting (gibson, gibson serve)
+start: 0 # start the local intro this many seconds in (gibson only)
+
+# gibson serve; gibson healthcheck checks ssh.listen.
+ssh:
+  listen: ":2222" # address to serve SSH on
+  host-key: .ssh/id_ed25519 # path of the SSH host key, generated if missing
+  max-conns: 128 # maximum open connections, handshakes included
+  max-sessions: 32 # maximum concurrent sessions
+  rate: 0.5 # new sessions per second allowed per IP
+  burst: 5 # burst of new sessions allowed per IP
+  max-duration: 15m # maximum lifetime of a connection
+
+# gibson render
+render:
+  png: "" # render a single frame to this PNG
+  gif: "" # render the sequence to this GIF (ignored when png is set)
+  at: 6 # time of the png frame (seconds)
+  dur: 10 # duration of the gif (seconds)
+  size: 120x40 # terminal size (cols x rows)

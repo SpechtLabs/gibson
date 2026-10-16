@@ -1,0 +1,63 @@
+# The animation: canvas, scene, themes and preview renderer
+renderer:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "internal/render/**"
+          - "internal/scene/**"
+          - "internal/theme/**"
+          - "internal/preview/**"
+
+# The SSH server
+server:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "internal/server/**"
+
+# CLI commands and entrypoint
+cli:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "cmd/**"
+
+# The container image and deployment examples
+container:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Dockerfile"
+          - "deploy/**"
+
+# Documentation
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+
+# Build, release, and CI plumbing
+build:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+          - ".goreleaser.yaml"
+          - ".release-please-config.json"
+          - ".release-please-manifest.json"
+          - ".mise.toml"
+          - ".golangci.yaml"
+          - ".custom-gcl.yml"
+          - ".pre-commit-config.yaml"
+          - ".yamllint.yaml"
+          - ".editorconfig"
+          - "renovate.json"
+          - "go.mod"
+          - "go.sum"
+
+# Add 'enhancement' to any PR whose head branch starts with `feat` or `feature`
+enhancement:
+  - head-branch:
+      - "^feat"
+      - "^feature"
+
+# Add 'bug' to any PR whose head branch starts with `fix` or `bug`
+bug:
+  - head-branch:
+      - "^fix"
+      - "^bug"

@@ -1,0 +1,72 @@
+name: Scan
+
+# The published image: check its cosign signature came from this repository's
+# release workflow, then scan it with Trivy into GitHub code scanning. Runs
+# after every release and weekly, so a CVE disclosed after the release still
+# shows up (Renovate then ships the fixed base image or module as a fix(deps)
+# release).
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to scan
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to scan
+        required: false
+        default: latest
+        type: string
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  # mise itself, pinned; go.yaml explains why.
+  # renovate: datasource=github-releases depName=jdx/mise extractVersion=^v(?<version>.+)$
+  MISE_VERSION: 2026.10.10
+
+jobs:
+  scan:
+    name: Verify and scan the image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      IMAGE: ghcr.io/spechtlabs/gibson:${{ inputs.tag || 'latest' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        with:
+          version: ${{ env.MISE_VERSION }}
+          install_args: cosign trivy
+          cache: false
+
+      - name: Verify the image signature
+        run: |
+          cosign verify "${IMAGE}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github\.com/(?i:spechtlabs/gibson)/\.github/workflows/release\.yaml@'
+
+      - name: Scan with Trivy
+        run: trivy image --format sarif --output trivy.sarif --severity MEDIUM,HIGH,CRITICAL "${IMAGE}"
+
+      - name: Upload the results to code scanning
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-image
+
+      # Fail the run, after the upload, on anything fixable and serious.
+      - name: Gate on HIGH and CRITICAL
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "${IMAGE}"

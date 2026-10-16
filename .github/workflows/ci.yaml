@@ -1,0 +1,84 @@
+name: CI
+
+# Everything a pull request runs. The main ruleset requires one check, "CI
+# passed", which needs every job below. So this workflow runs on every pull
+# request: a workflow-level path filter would leave a docs-only pull request
+# without the required check and block its merge. The changes job decides
+# instead whether the parts run.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a pull request supersedes its run in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Skip the parts for pull requests that only touch documentation. The
+  # filter excludes rather than lists, so a new source directory or config
+  # file runs CI by default. A manual run always runs everything.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      - name: List the pull request's files
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PR" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          code=false
+          while IFS= read -r file; do
+            case "$file" in
+              *.md | LICENSE) ;;
+              *) code=true ;;
+            esac
+          done < <(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Runs the CI parts: $code"
+
+  go:
+    name: Go
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    uses: ./.github/workflows/go.yaml
+
+  # The one check the main ruleset requires, so a new job only has to be
+  # added to needs here. It passes only when every job passed or was skipped
+  # as docs-only.
+  passed:
+    name: CI passed
+    if: always()
+    needs: [changes, go]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check every job's result
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          failed=$(echo "$RESULTS" | jq -r '[to_entries[] | select(.value.result != "success" and .value.result != "skipped") | .key] | join(", ")')
+          if [ "$(echo "$RESULTS" | jq -r '.changes.result')" != "success" ]; then
+            echo "::error::The changes job didn't succeed, so nothing was checked"
+            exit 1
+          fi
+          if [ -n "$failed" ]; then
+            echo "::error::Failed or cancelled: $failed"
+            exit 1
+          fi

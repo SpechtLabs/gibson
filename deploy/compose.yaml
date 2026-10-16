@@ -1,0 +1,49 @@
+# Run the published image as hardened as it goes:
+#
+#   docker compose -f deploy/compose.yaml up -d
+#   ssh -p 2222 localhost
+#
+# Configure it with GIBSON_* environment variables, or mount a config file at
+# /etc/gibson/gibson.yaml (see gibson.example.yaml).
+name: gibson
+
+services:
+  gibson:
+    image: ghcr.io/spechtlabs/gibson:latest
+    restart: unless-stopped
+    ports:
+      - "2222:2222"
+    environment:
+      GIBSON_THEME: specht
+      GIBSON_VESSEL: dodeca
+      # Every viewer costs a full render per frame; size these to the host.
+      GIBSON_SSH_MAX_SESSIONS: "32"
+      GIBSON_SSH_MAX_DURATION: 15m
+      GIBSON_FPS: "24"
+    # volumes:
+    #   - ./gibson.yaml:/etc/gibson/gibson.yaml:ro
+    volumes:
+      # The SSH host key lives here, so it survives restarts and clients
+      # don't see a changed host key.
+      - gibson-data:/data
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: 2
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  gibson-data:

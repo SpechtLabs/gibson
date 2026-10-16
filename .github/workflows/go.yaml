@@ -1,0 +1,150 @@
+name: Go
+
+# The Go module and the image: lint, a GoReleaser snapshot, and the image
+# built, smoke-tested hardened and scanned. ci.yaml calls it for pull
+# requests, release.yaml gates every release on it, and it runs on its own
+# from the Actions tab.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Each job installs the tools listed below with mise-action's install_args.
+  # Without this, `mise run` installs every tool in .mise.toml first, gopls
+  # included, which makes each job wait on tools it never runs.
+  MISE_TASK_RUN_AUTO_INSTALL: "false"
+  # mise itself, pinned. Unpinned, mise-action picks the newest release and
+  # leaves it out of its cache key, so every new mise release finds an older
+  # binary in the restored cache and downloads it again.
+  # renovate: datasource=github-releases depName=jdx/mise extractVersion=^v(?<version>.+)$
+  MISE_VERSION: 2026.10.10
+  # Every tool a CI job runs, installed in every job. mise-action keys its
+  # cache on install_args, so one list means one cache.
+  MISE_TOOLS: go golangci-lint yamllint actionlint shellcheck zizmor hadolint goreleaser trivy
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        with:
+          version: ${{ env.MISE_VERSION }}
+          install_args: ${{ env.MISE_TOOLS }}
+
+      # Go's module and build caches, and golangci-lint's analysis cache, keyed
+      # on the dependency set.
+      - name: Cache Go modules and build output
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/.cache/golangci-lint
+          key: go-lint-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum') }}
+          restore-keys: go-lint-${{ runner.os }}-
+
+      - name: Restore custom-gcl cache
+        id: custom-gcl-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: custom-gcl
+          key: custom-gcl-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.custom-gcl.yml', '.mise.toml') }}
+
+      # Builds ./custom-gcl (golangci-lint + golint-sl) and runs it, along with
+      # yamllint, actionlint, zizmor and hadolint.
+      - name: Lint
+        if: steps.custom-gcl-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "::add-matcher::.github/actionlint-matcher.json"
+          mise run lint
+
+      - name: Lint with cached custom-gcl
+        if: steps.custom-gcl-cache.outputs.cache-hit == 'true'
+        run: |
+          echo "::add-matcher::.github/actionlint-matcher.json"
+          chmod +x ./custom-gcl
+          ./custom-gcl run ./...
+          mise run yaml-lint
+          mise run actionlint
+          mise run zizmor
+          mise run hadolint
+
+  build:
+    name: Build with GoReleaser
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        with:
+          version: ${{ env.MISE_VERSION }}
+          install_args: ${{ env.MISE_TOOLS }}
+
+      - name: Cache Go modules and build output
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-goreleaser-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum') }}
+          restore-keys: go-goreleaser-${{ runner.os }}-
+
+      # GoReleaser builds the tagged tree unchanged, so go.mod must be tidy
+      # before it's ever tagged.
+      - name: Check go.mod is tidy
+        run: mise run mod-tidy
+
+      - name: Validate GoReleaser config
+        run: mise run release-check
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The snapshot builds the binaries and, per platform, the images into the
+      # local daemon, exactly as a release would, without pushing or signing.
+      - name: Build binaries and images (snapshot)
+        run: mise run image
+
+      # The image as it should be deployed: read-only root, no capabilities,
+      # no privilege escalation, and nothing writable but the /data volume.
+      # It has to come up healthy, which means it generated its host key and
+      # answers with an SSH banner.
+      - name: Smoke-test the hardened image
+        run: |
+          set -euo pipefail
+          image="$(docker image ls ghcr.io/spechtlabs/gibson --format '{{.Repository}}:{{.Tag}}' | grep -- '-amd64$' | head -n1)"
+          echo "image=${image}"
+          docker run -d --name gibson --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --pids-limit 256 --memory 256m \
+            -p 127.0.0.1:2222:2222 "${image}"
+          for _ in $(seq 1 30); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' gibson)"
+            [ "${status}" = "healthy" ] && break
+            sleep 2
+          done
+          docker logs gibson
+          [ "${status}" = "healthy" ] || { echo "::error::container is ${status}"; exit 1; }
+          ssh-keyscan -p 2222 127.0.0.1
+          docker rm -f gibson
+
+      - name: Scan the image for vulnerabilities
+        run: |
+          set -euo pipefail
+          IMAGE="$(docker image ls ghcr.io/spechtlabs/gibson --format '{{.Repository}}:{{.Tag}}' | grep -- '-amd64$' | head -n1)"
+          export IMAGE
+          mise run scan

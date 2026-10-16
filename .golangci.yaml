@@ -1,0 +1,123 @@
+# golangci-lint configuration for gibson.
+#
+# golint-sl runs as a module plugin baked into ./custom-gcl (see .custom-gcl.yml).
+# The prebuilt golangci-lint cannot load the plugin, so run it with
+# `mise run lint`, which builds custom-gcl and runs it.
+# https://golangci-lint.run/usage/configuration/
+
+version: "2"
+
+run:
+  timeout: 10m
+  tests: true
+  modules-download-mode: readonly
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  enable:
+    # Default linters
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    # Additional recommended linters
+    - dogsled
+    - copyloopvar
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - goprintffuncname
+    - gosec
+    - misspell
+    - modernize
+    - nakedret
+    - nolintlint
+    - prealloc
+    - revive
+    - whitespace
+    - unconvert
+    - unparam
+
+    # golint-sl: production-ready Go patterns (error handling, observability, safety)
+    # https://golint.specht-labs.de/
+    - golint-sl
+
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: comment-spacings
+        - name: import-shadowing
+    custom:
+      golint-sl:
+        type: module
+        description: SpechtLabs Go linter collection for production-ready code
+        original-url: github.com/spechtlabs/golint-sl
+
+  exclusions:
+    generated: lax
+    rules:
+      # Errors end in fang's error box on the terminal that ran the command,
+      # with the context the message already gives; there is no caller to act
+      # on advice, so humane errors would add nothing.
+      - linters:
+          - golint-sl
+        text: "^(humaneerror|errorwrap):"
+
+      # Every pointer here is built by its own caller one frame up (the scene,
+      # the canvas, the session counter); returning quietly on nil would hide
+      # a bug rather than prevent one.
+      - linters:
+          - golint-sl
+        text: "^nilcheck:"
+
+      # Wall-clock time is the point: it drives the animation and bounds the
+      # health check's dial.
+      - linters:
+          - golint-sl
+        text: "^clockinterface:"
+        path: ^internal/(app|server)/
+
+      # The renderer is per-pixel loops over cells, sub-pixels and glyph rows,
+      # tuned for how they look rather than how they read; nesting and length
+      # come with the territory. The integer conversions are of bounded pixel
+      # and cell coordinates, and the glyph font is rows of '#' and '.'.
+      - linters:
+          - golint-sl
+        text: "^(nestingdepth|functionsize):"
+        path: ^internal/(render|scene|preview)/
+      - linters:
+          - gosec
+        text: "^G115:"
+        path: ^internal/(render|scene|preview)/
+      - linters:
+          - goconst
+        path: ^internal/scene/overlay\.go$
+
+      # render writes the PNG or GIF to the path the user asked for.
+      - linters:
+          - gosec
+        text: "^G304:"
+        path: ^cmd/gibson/command/render/
+    paths:
+      - third_party$
+      - builtin$
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$

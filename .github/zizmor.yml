@@ -1,0 +1,5 @@
+rules:
+  # The `$/` self-repository syntax for reusable workflows is newer than
+  # actionlint's parser; `./` resolves to the same commit.
+  self-repository:
+    disable: true
