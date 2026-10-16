@@ -21,7 +21,10 @@ COPY --chmod=0555 $TARGETPLATFORM/gibson /usr/local/bin/gibson
 COPY --chown=65532:65532 --chmod=0700 deploy/data/ /data/
 # Defaults as a config file rather than ENV: environment variables beat a
 # config file, so ENV defaults would shadow any gibson.yaml mounted over this.
-COPY --chmod=0444 deploy/gibson.yaml /etc/gibson/gibson.yaml
+# No --chmod: BuildKit applies it to the directories it creates too, and a
+# 0444 /etc/gibson can't be entered by uid 65532. Root-owned 0755/0644 from
+# the build context is readable and still not writable.
+COPY deploy/gibson.yaml /etc/gibson/gibson.yaml
 
 USER 65532:65532
 WORKDIR /data
