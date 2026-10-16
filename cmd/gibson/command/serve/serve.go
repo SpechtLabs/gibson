@@ -16,6 +16,7 @@ import (
 
 	"github.com/spechtlabs/gibson/internal/app"
 	"github.com/spechtlabs/gibson/internal/config"
+	"github.com/spechtlabs/gibson/internal/denied"
 	"github.com/spechtlabs/gibson/pkg/sshserver"
 )
 
@@ -81,7 +82,9 @@ size.`,
 					// depends on 24-bit gradients, so don't let it downsample
 					tea.WithColorProfile(colorprofile.TrueColor),
 				),
-				sshserver.WithCapacityMessage("the gibson is at capacity, try again in a bit"),
+				// a turned-away viewer gets the scene frozen and a line from
+				// Hackers; gibson denied previews it
+				sshserver.WithCapacityHandler(denied.Handler(look, app.MaxCols, app.MaxRows)),
 			)
 			if err != nil {
 				return err

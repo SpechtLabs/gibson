@@ -14,6 +14,7 @@ import (
 	"charm.land/fang/v2"
 	"github.com/spf13/cobra"
 
+	"github.com/spechtlabs/gibson/cmd/gibson/command/denied"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/healthcheck"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/render"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/serve"
@@ -91,6 +92,7 @@ gibson serve --listen :2222`,
 	cmd.AddCommand(
 		serve.NewCommand(v, version),
 		render.NewCommand(v),
+		denied.NewCommand(v),
 		healthcheck.NewCommand(v),
 	)
 	return cmd

@@ -80,12 +80,12 @@ linters:
           - golint-sl
         text: "^nilcheck:"
 
-      # Wall-clock time is the point: it drives the animation and bounds the
-      # health check's dial.
+      # Wall-clock time is the point: it drives the animation, paces the
+      # denied screen's scan line and bounds the health check's dial.
       - linters:
           - golint-sl
         text: "^clockinterface:"
-        path: ^(internal/app|pkg/sshserver)/
+        path: ^(internal/(app|denied)|pkg/sshserver)/
 
       # The renderer and the components are per-pixel loops over cells,
       # sub-pixels and glyph rows, tuned for how they look rather than how
@@ -101,7 +101,7 @@ linters:
         path: ^pkg/(render|preview|components)/
       - linters:
           - goconst
-        path: ^pkg/components/title/font\.go$
+        path: ^pkg/font/font\.go$
 
       # Field picks which containment field comes with a vessel; returning
       # the interface is the point.
@@ -109,6 +109,12 @@ linters:
           - golint-sl
         text: "^returninterface:"
         path: ^internal/scene/catalog\.go$
+
+      # Which Hackers line a turned-away viewer reads is not a secret.
+      - linters:
+          - gosec
+        text: "^G404:"
+        path: ^internal/denied/
 
       # render writes the PNG or GIF to the path the user asked for.
       - linters:

@@ -11,6 +11,7 @@ require (
 	charm.land/ssh v0.4.3
 	charm.land/wish/v2 v2.0.5
 	github.com/charmbracelet/colorprofile v0.4.3
+	github.com/charmbracelet/x/term v0.2.2
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -27,7 +28,6 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.9 // indirect
 	github.com/charmbracelet/x/conpty v0.2.0 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20250603201427-c31516f43444 // indirect
-	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/charmbracelet/x/xpty v0.1.4 // indirect

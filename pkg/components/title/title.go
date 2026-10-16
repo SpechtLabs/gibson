@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"github.com/spechtlabs/gibson/pkg/anim"
+	"github.com/spechtlabs/gibson/pkg/font"
 	r "github.com/spechtlabs/gibson/pkg/render"
 	"github.com/spechtlabs/gibson/pkg/stage"
 )
@@ -78,7 +79,7 @@ func (ti *Title) drawBlocks(st *stage.Stage) {
 			continue
 		}
 		resolve := ti.start + 0.25 + float64(li)*0.09 + anim.Hash(uint32(li), 11, 0)*0.15
-		ti.glyph(st, buf, pw, ph, x0, li, font[ch], resolve, q)
+		ti.glyph(st, buf, pw, ph, x0, li, font.Get(ch), resolve, q)
 		x0 += gw + gap
 	}
 
@@ -106,14 +107,14 @@ func (ti *Title) drawBlocks(st *stage.Stage) {
 
 // glyph renders letter li (glyph g) into buf at x0: noise until resolve,
 // then the glyph flashing white, then the sheen once the scene holds.
-func (ti *Title) glyph(st *stage.Stage, buf []px, pw, ph, x0, li int, g [7]string, resolve float64, q uint32) {
+func (ti *Title) glyph(st *stage.Stage, buf []px, pw, ph, x0, li int, g font.Glyph, resolve float64, q uint32) {
 	t := st.T
 	sc := st.Layout.TitleScale
 	for gy := range ph {
 		for gx := range 5 * sc {
 			var on bool
 			if t >= resolve {
-				on = lit(g, gx/sc, gy/sc)
+				on = g.Lit(gx/sc, gy/sc)
 			} else {
 				on = anim.Hash(uint32(li*97+gx/sc), uint32(gy/sc), q) < 0.42
 			}

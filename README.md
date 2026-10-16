@@ -52,6 +52,7 @@ default.
 gibson                 play the intro locally
 gibson serve           serve it over SSH
 gibson render          write a PNG frame or a GIF of the sequence
+gibson denied          preview the screen a viewer gets when the server is full
 gibson healthcheck     exit 0 if the SSH server answers (container health check)
 ```
 
@@ -104,6 +105,9 @@ everywhere:
 | `ssh.max-duration` | 15m     | lifetime of a connection                        |
 
 Handshakes time out after 10s, and terminal sizes are capped at 400×150.
+A viewer turned away at `ssh.max-sessions` gets the scene frozen, a scan line
+sweeping down it and a red ACCESS DENIED with a line from Hackers (1995);
+`gibson denied` previews it.
 Bandwidth is about 0.5 MB/s per viewer at 30 fps in a 120×40 terminal, so
 `fps: 20` is kinder over the internet.
 
@@ -119,6 +123,7 @@ pkg/
   theme/         the Theme interface and Palette
     synth/ specht/ umbrella/
   anim/          easing, phases and hash noise
+  font/          5×7 block font for big lettering
   preview/       PNG/GIF rasterizer for frames
   sshserver/     a bounded Wish server for any Bubble Tea program
   components/    the parts a scene is built from
@@ -127,11 +132,12 @@ pkg/
     containment/ the Field interface           ring/ orbiter/
     projector/   materializes a specimen, beam, floor rings, emitter pad
     dust/        ambient particles
-    boot/ hud/ title/ tagline/                 overlays
+    boot/ hud/ title/ tagline/ banner/         overlays
     poweron/ crt/ glitch/                      monitor effects
 internal/
   scene/         the intro: timeline, layout, and the catalog of names
   app/           the Bubble Tea model
+  denied/        the screen a viewer turned away at capacity gets
   config/        viper settings
 ```
 

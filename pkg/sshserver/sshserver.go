@@ -55,7 +55,7 @@ type Server struct {
 	limits   Limits
 	model    func(ssh.Session) tea.Model
 	progOpts []tea.ProgramOption
-	full     string
+	full     ssh.Handler
 
 	srv *ssh.Server
 }
@@ -84,7 +84,15 @@ func WithProgramOptions(opts ...tea.ProgramOption) Option {
 }
 
 // WithCapacityMessage sets what a session turned away at MaxSessions reads.
-func WithCapacityMessage(msg string) Option { return func(s *Server) { s.full = msg } }
+func WithCapacityMessage(msg string) Option {
+	return WithCapacityHandler(func(sess ssh.Session) { wish.Fatalln(sess, msg) })
+}
+
+// WithCapacityHandler sets what a session turned away at MaxSessions gets
+// instead of a message. It runs before the session has been checked for a
+// pty, and the session ends when it returns. It doesn't count against
+// MaxSessions, so keep it short and cheap.
+func WithCapacityHandler(h ssh.Handler) Option { return func(s *Server) { s.full = h } }
 
 // ErrNoModel is returned by [New] without [WithModel].
 var ErrNoModel = errors.New("sshserver: no model; use WithModel")
@@ -95,8 +103,8 @@ func New(opts ...Option) (*Server, error) {
 		addr:    ":2222",
 		hostKey: ".ssh/id_ed25519",
 		limits:  DefaultLimits(),
-		full:    "the server is at capacity, try again in a bit",
 	}
+	WithCapacityMessage("the server is at capacity, try again in a bit")(s)
 	for _, o := range opts {
 		o(s)
 	}
@@ -194,12 +202,12 @@ func (c *countedConn) Close() error {
 }
 
 // sessionLimiter turns sessions away once max are running.
-func sessionLimiter(n *atomic.Int64, maxSessions int, msg string) wish.Middleware {
+func sessionLimiter(n *atomic.Int64, maxSessions int, full ssh.Handler) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(s ssh.Session) {
 			defer n.Add(-1)
 			if n.Add(1) > int64(maxSessions) {
-				wish.Fatalln(s, msg)
+				full(s)
 				return
 			}
 			next(s)
