@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/SpechtLabs/gibson/compare/v0.1.1...v0.1.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* make /etc/gibson in the image traversable by the nonroot user ([#9](https://github.com/SpechtLabs/gibson/issues/9)) ([4f201b8](https://github.com/SpechtLabs/gibson/commit/4f201b898226320f666fc0c7b383981e16ad1857))
+
 ## [0.1.1](https://github.com/SpechtLabs/gibson/compare/v0.1.0...v0.1.1) (2026-10-16)
 
 
