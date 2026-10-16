@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/SpechtLabs/gibson/compare/v0.1.0...v0.1.1) (2026-10-16)
+
+
+### Features
+
+* run behind a PROXY-protocol load balancer ([#7](https://github.com/SpechtLabs/gibson/issues/7)) ([157a6be](https://github.com/SpechtLabs/gibson/commit/157a6bec6e2cd6c1fb2580913451942f1fe33ed7))
+
 ## 0.1.0 (2026-10-16)
 
 
