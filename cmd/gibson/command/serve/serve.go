@@ -22,14 +22,15 @@ import (
 
 // flags maps serve's flags to their config keys.
 var flags = map[string]string{
-	"listen":       config.Listen,
-	"host-key":     config.HostKey,
-	"max-conns":    config.MaxConns,
-	"max-sessions": config.MaxSessions,
-	"rate":         config.Rate,
-	"burst":        config.Burst,
-	"max-duration": config.MaxDuration,
-	"pausable":     config.Pausable,
+	"listen":         config.Listen,
+	"host-key":       config.HostKey,
+	"max-conns":      config.MaxConns,
+	"max-sessions":   config.MaxSessions,
+	"rate":           config.Rate,
+	"burst":          config.Burst,
+	"max-duration":   config.MaxDuration,
+	"proxy-protocol": config.ProxyProto,
+	"pausable":       config.Pausable,
 }
 
 // NewCommand returns the serve command, which reads its settings from v
@@ -62,6 +63,7 @@ size.`,
 			srv, err := sshserver.New(
 				sshserver.WithAddress(v.GetString(config.Listen)),
 				sshserver.WithHostKeyPath(v.GetString(config.HostKey)),
+				sshserver.WithProxyProtocol(v.GetBool(config.ProxyProto)),
 				sshserver.WithLimits(sshserver.Limits{
 					MaxConns:    v.GetInt(config.MaxConns),
 					MaxSessions: v.GetInt(config.MaxSessions),
@@ -104,6 +106,7 @@ size.`,
 	f.Float64("rate", 0.5, "new sessions per second allowed per IP")
 	f.Int("burst", 5, "burst of new sessions allowed per IP")
 	f.Duration("max-duration", 15*time.Minute, "maximum lifetime of a connection")
+	f.Bool("proxy-protocol", false, "read the client's address from a PROXY protocol header, behind a load balancer that sends one (only when nothing else can reach the server)")
 	f.Bool("pausable", false, "space toggles pause instead of quitting (TEMP)")
 	return cmd
 }
