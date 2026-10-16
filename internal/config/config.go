@@ -88,7 +88,9 @@ func Load(v *viper.Viper, path string) error {
 		}
 		return fmt.Errorf("read config: %w", err)
 	}
-	log.Info("loaded config", "file", v.ConfigFileUsed())
+	// Debug, since the container healthcheck loads it every 30s; serve logs
+	// the file it runs with at info.
+	log.Debug("loaded config", "file", v.ConfigFileUsed())
 	return nil
 }
 

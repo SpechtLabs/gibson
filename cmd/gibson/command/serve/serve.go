@@ -4,6 +4,8 @@ package serve
 import (
 	"time"
 
+	"charm.land/log/v2"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -41,6 +43,9 @@ size.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := config.Bind(v, cmd.Flags(), flags); err != nil {
 				return err
+			}
+			if f := v.ConfigFileUsed(); f != "" {
+				log.Info("loaded config", "file", f)
 			}
 			look, err := config.Look(v)
 			if err != nil {
