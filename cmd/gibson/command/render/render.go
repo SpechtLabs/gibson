@@ -13,16 +13,15 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spechtlabs/gibson/internal/config"
-	"github.com/spechtlabs/gibson/internal/preview"
-	r "github.com/spechtlabs/gibson/internal/render"
 	"github.com/spechtlabs/gibson/internal/scene"
-	"github.com/spechtlabs/gibson/internal/theme"
+	"github.com/spechtlabs/gibson/pkg/preview"
+	r "github.com/spechtlabs/gibson/pkg/render"
 )
 
-// flags maps render's flags to their config keys.
 // ErrNothingToRender is returned when neither --png nor --gif is set.
 var ErrNothingToRender = errors.New("nothing to render: set --png or --gif")
 
+// flags maps render's flags to their config keys.
 var flags = map[string]string{
 	"png":  config.RenderPNG,
 	"gif":  config.RenderGIF,
@@ -61,7 +60,11 @@ gibson render --gif intro.gif --theme specht`,
 			if _, err := fmt.Sscanf(v.GetString(config.RenderSize), "%dx%d", &w, &h); err != nil {
 				return fmt.Errorf("bad --size: %w", err)
 			}
-			return offline(scene.New(look), look.Theme, w, h, pngOut, gifOut,
+			sc, err := look.New()
+			if err != nil {
+				return err
+			}
+			return offline(sc, w, h, pngOut, gifOut,
 				v.GetFloat64(config.RenderAt), v.GetFloat64(config.RenderDur), v.GetInt(config.FPS))
 		},
 	}
@@ -75,7 +78,7 @@ gibson render --gif intro.gif --theme specht`,
 	return cmd
 }
 
-func offline(sc *scene.Scene, th theme.Theme, w, h int, pngOut, gifOut string, at, dur float64, fps int) error {
+func offline(sc *scene.Scene, w, h int, pngOut, gifOut string, at, dur float64, fps int) error {
 	if pngOut != "" {
 		f, err := os.Create(pngOut)
 		if err != nil {
@@ -87,6 +90,7 @@ func offline(sc *scene.Scene, th theme.Theme, w, h int, pngOut, gifOut string, a
 		}
 		return f.Close()
 	}
+	th := sc.Palette()
 	keys := append([]r.RGB{th.Specimen, th.Rings, th.Orbit, th.Beam, th.HUD, th.Text, th.Warn}, th.Grad...)
 	keys = append(keys, th.Title...)
 	q := preview.NewQuantizer(preview.Palette(keys))

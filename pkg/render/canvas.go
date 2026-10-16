@@ -74,6 +74,14 @@ func (c *Canvas) Clear() {
 	c.clearDepth()
 }
 
+// Occluding sets Occlude and OccludeFront, and returns a func that puts
+// back what they were: defer c.Occluding(0.18, 0.35)().
+func (c *Canvas) Occluding(behind, front float64) (restore func()) {
+	pb, pf := c.Occlude, c.OccludeFront
+	c.Occlude, c.OccludeFront = behind, front
+	return func() { c.Occlude, c.OccludeFront = pb, pf }
+}
+
 // DilateDepth grows every marked region by one cell so sparse shapes (like
 // hatched fills) occlude as a solid silhouette.
 func (c *Canvas) DilateDepth() {

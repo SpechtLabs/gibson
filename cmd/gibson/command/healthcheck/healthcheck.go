@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spechtlabs/gibson/internal/config"
-	"github.com/spechtlabs/gibson/internal/server"
+	"github.com/spechtlabs/gibson/pkg/sshserver"
 )
 
 // NewCommand returns the healthcheck command, which reads the address from
@@ -27,7 +27,7 @@ An address without a host is checked on 127.0.0.1.`,
 			if err := config.Bind(v, cmd.Flags(), map[string]string{"listen": config.Listen}); err != nil {
 				return err
 			}
-			if err := server.Healthcheck(v.GetString(config.Listen)); err != nil {
+			if err := sshserver.Healthcheck(v.GetString(config.Listen)); err != nil {
 				return fmt.Errorf("unhealthy: %w", err)
 			}
 			return nil

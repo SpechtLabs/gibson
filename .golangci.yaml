@@ -85,23 +85,30 @@ linters:
       - linters:
           - golint-sl
         text: "^clockinterface:"
-        path: ^internal/(app|server)/
+        path: ^(internal/app|pkg/sshserver)/
 
-      # The renderer is per-pixel loops over cells, sub-pixels and glyph rows,
-      # tuned for how they look rather than how they read; nesting and length
-      # come with the territory. The integer conversions are of bounded pixel
+      # The renderer and the components are per-pixel loops over cells,
+      # sub-pixels and glyph rows, tuned for how they look rather than how
+      # they read; nesting and length come with the territory. The integer conversions are of bounded pixel
       # and cell coordinates, and the glyph font is rows of '#' and '.'.
       - linters:
           - golint-sl
         text: "^(nestingdepth|functionsize):"
-        path: ^internal/(render|scene|preview)/
+        path: ^pkg/(render|preview|components)/
       - linters:
           - gosec
         text: "^G115:"
-        path: ^internal/(render|scene|preview)/
+        path: ^pkg/(render|preview|components)/
       - linters:
           - goconst
-        path: ^internal/scene/overlay\.go$
+        path: ^pkg/components/title/font\.go$
+
+      # Field picks which containment field comes with a vessel; returning
+      # the interface is the point.
+      - linters:
+          - golint-sl
+        text: "^returninterface:"
+        path: ^internal/scene/catalog\.go$
 
       # render writes the PNG or GIF to the path the user asked for.
       - linters:

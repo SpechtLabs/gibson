@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"charm.land/log/v2"
@@ -21,7 +20,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spechtlabs/gibson/internal/scene"
-	"github.com/spechtlabs/gibson/internal/theme"
 )
 
 // Look keys, shared by every command.
@@ -129,22 +127,20 @@ func check(typ string, val any) error {
 	return err
 }
 
-// Look returns the scene options the look keys pick, and an error naming
-// the valid values for any it doesn't know.
-func Look(v *viper.Viper) (scene.Options, error) {
-	th, err := theme.Get(v.GetString(Theme))
-	if err != nil {
-		return scene.Options{}, err
+// Look returns the look the look keys pick, and an error naming the valid
+// values for any it doesn't know.
+func Look(v *viper.Viper) (scene.Look, error) {
+	l := scene.Look{
+		Theme:    v.GetString(Theme),
+		Specimen: v.GetString(Specimen),
+		Vessel:   v.GetString(Vessel),
+		Tagline:  v.GetString(Tagline),
 	}
-	specimen, vessel := v.GetString(Specimen), v.GetString(Vessel)
-	if !slices.Contains(scene.Specimens, specimen) {
-		return scene.Options{}, fmt.Errorf("unknown specimen %q (have: %v)", specimen, scene.Specimens)
-	}
-	if !slices.Contains(scene.Vessels, vessel) {
-		return scene.Options{}, fmt.Errorf("unknown vessel %q (have: %v)", vessel, scene.Vessels)
+	if _, err := l.Options(); err != nil {
+		return scene.Look{}, err
 	}
 	if fps := v.GetInt(FPS); fps <= 0 {
-		return scene.Options{}, fmt.Errorf("fps must be positive, got %d", fps)
+		return scene.Look{}, fmt.Errorf("fps must be positive, got %d", fps)
 	}
-	return scene.Options{Theme: th, Specimen: specimen, Vessel: vessel, Tagline: v.GetString(Tagline)}, nil
+	return l, nil
 }

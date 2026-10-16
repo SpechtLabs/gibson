@@ -1,17 +1,31 @@
-# The animation: canvas, scene, themes and preview renderer
+# The renderer and what the components draw on: canvas, stage, themes,
+# timing helpers and the preview rasterizer
 renderer:
   - changed-files:
       - any-glob-to-any-file:
-          - "internal/render/**"
-          - "internal/scene/**"
-          - "internal/theme/**"
-          - "internal/preview/**"
+          - "pkg/render/**"
+          - "pkg/stage/**"
+          - "pkg/theme/**"
+          - "pkg/anim/**"
+          - "pkg/preview/**"
+
+# The scene's parts: specimens, vessels, containment, overlays, effects
+components:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "pkg/components/**"
+
+# How gibson assembles them: the scene, the app, the config
+app:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "internal/**"
 
 # The SSH server
 server:
   - changed-files:
       - any-glob-to-any-file:
-          - "internal/server/**"
+          - "pkg/sshserver/**"
 
 # CLI commands and entrypoint
 cli:

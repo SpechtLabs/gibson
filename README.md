@@ -107,6 +107,49 @@ Handshakes time out after 10s, and terminal sizes are capped at 400×150.
 Bandwidth is about 0.5 MB/s per viewer at 30 fps in a 120×40 terminal, so
 `fps: 20` is kinder over the internet.
 
+## Layout
+
+Everything reusable lives in `pkg/`, and `internal/` only assembles gibson
+from it.
+
+```text
+pkg/
+  render/        braille sub-pixel canvas, depth test, bloom, ANSI output
+  stage/         per-frame drawing context: canvas, camera, time, and a 3D pen
+  theme/         the Theme interface and Palette
+    synth/ specht/ umbrella/
+  anim/          easing, phases and hash noise
+  preview/       PNG/GIF rasterizer for frames
+  sshserver/     a bounded Wish server for any Bubble Tea program
+  components/    the parts a scene is built from
+    specimen/    the Specimen interface        bird/ blob/
+    vessel/      the Vessel interface          hex/ dodeca/
+    containment/ the Field interface           ring/ orbiter/
+    projector/   materializes a specimen, beam, floor rings, emitter pad
+    dust/        ambient particles
+    boot/ hud/ title/ tagline/                 overlays
+    poweron/ crt/ glitch/                      monitor effects
+internal/
+  scene/         the intro: timeline, layout, and the catalog of names
+  app/           the Bubble Tea model
+  config/        viper settings
+```
+
+Components are built with functional options, and a scene too:
+
+```go
+sc := scene.New(
+	scene.WithTheme(specht.New()),
+	scene.WithSpecimen(bird.New()),
+	scene.WithVessel(dodeca.New(dodeca.WithScale(0.78))),
+	scene.WithContainment(orbiter.New(orbiter.WithRadius(1.35))),
+)
+frame := sc.Render(7.5, 120, 40)
+```
+
+A new specimen, vessel, field or theme is a sub-package implementing its
+interface, plus one line in `internal/scene/catalog.go` to give it a name.
+
 ## Development
 
 `mise run check` runs what CI runs: golangci-lint with

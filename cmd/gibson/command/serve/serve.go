@@ -2,15 +2,21 @@
 package serve
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"charm.land/log/v2"
-
+	"charm.land/ssh"
+	"github.com/charmbracelet/colorprofile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spechtlabs/gibson/internal/app"
 	"github.com/spechtlabs/gibson/internal/config"
-	"github.com/spechtlabs/gibson/internal/server"
+	"github.com/spechtlabs/gibson/pkg/sshserver"
 )
 
 // flags maps serve's flags to their config keys.
@@ -51,21 +57,39 @@ size.`,
 			if err != nil {
 				return err
 			}
-			return server.Serve(server.Options{
-				Addr:     v.GetString(config.Listen),
-				HostKey:  v.GetString(config.HostKey),
-				Defaults: look,
-				FPS:      v.GetInt(config.FPS),
-				Pausable: v.GetBool(config.Pausable),
-				Limits: server.Limits{
+			fps, pausable := v.GetInt(config.FPS), v.GetBool(config.Pausable)
+			srv, err := sshserver.New(
+				sshserver.WithAddress(v.GetString(config.Listen)),
+				sshserver.WithHostKeyPath(v.GetString(config.HostKey)),
+				sshserver.WithLimits(sshserver.Limits{
 					MaxConns:    v.GetInt(config.MaxConns),
 					MaxSessions: v.GetInt(config.MaxSessions),
 					PerIPRate:   v.GetFloat64(config.Rate),
 					PerIPBurst:  v.GetInt(config.Burst),
 					MaxDuration: v.GetDuration(config.MaxDuration),
-				},
-				Version: version,
-			})
+					Handshake:   10 * time.Second,
+				}),
+				sshserver.WithModel(func(sess ssh.Session) tea.Model {
+					// words passed as the SSH command pick the look; they're
+					// all known names, so this can't fail
+					sc, _ := look.Override(sess.Command()).New()
+					return app.New(sc, fps, 0, pausable)
+				}),
+				sshserver.WithProgramOptions(
+					tea.WithFPS(fps),
+					// ssh clients rarely forward COLORTERM, and the whole look
+					// depends on 24-bit gradients, so don't let it downsample
+					tea.WithColorProfile(colorprofile.TrueColor),
+				),
+				sshserver.WithCapacityMessage("the gibson is at capacity, try again in a bit"),
+			)
+			if err != nil {
+				return err
+			}
+			log.Info("gibson", "version", version)
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+			return srv.Run(ctx)
 		},
 	}
 

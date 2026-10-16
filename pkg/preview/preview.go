@@ -11,7 +11,7 @@ import (
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/math/fixed"
 
-	r "github.com/spechtlabs/gibson/internal/render"
+	r "github.com/spechtlabs/gibson/pkg/render"
 )
 
 // CW and CH are the size in pixels of one terminal cell in a preview.

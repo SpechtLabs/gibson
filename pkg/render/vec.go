@@ -40,6 +40,12 @@ func (a Vec3) RotZ(t float64) Vec3 {
 	return Vec3{a.X*c - a.Y*s, a.X*s + a.Y*c, a.Z}
 }
 
+// RotAxis rotates a around the unit axis k by t radians (Rodrigues).
+func (a Vec3) RotAxis(k Vec3, t float64) Vec3 {
+	s, c := math.Sincos(t)
+	return a.Scale(c).Add(k.Cross(a).Scale(s)).Add(k.Scale(k.Dot(a) * (1 - c)))
+}
+
 // Camera is a simple perspective camera looking down +Z from (0,0,-Dist).
 // Output coordinates are in canvas sub-pixels.
 type Camera struct {
@@ -48,6 +54,8 @@ type Camera struct {
 	Dist   float64
 }
 
+// Project maps a camera-space point to canvas sub-pixels; ok is false for
+// points behind the camera.
 func (c Camera) Project(v Vec3) (x, y float64, ok bool) {
 	z := v.Z + c.Dist
 	if z < 0.05 {

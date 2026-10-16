@@ -8,7 +8,7 @@ package command
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/fang/v2"
@@ -20,7 +20,6 @@ import (
 	"github.com/spechtlabs/gibson/internal/app"
 	"github.com/spechtlabs/gibson/internal/config"
 	"github.com/spechtlabs/gibson/internal/scene"
-	"github.com/spechtlabs/gibson/internal/theme"
 )
 
 // lookFlags maps the root's persistent flags to their config keys.
@@ -63,12 +62,16 @@ gibson serve --listen :2222`,
 			if err := config.Bind(v, cmd.Flags(), map[string]string{"start": config.Start, "pausable": config.Pausable}); err != nil {
 				return err
 			}
-			opts, err := config.Look(v)
+			look, err := config.Look(v)
+			if err != nil {
+				return err
+			}
+			sc, err := look.New()
 			if err != nil {
 				return err
 			}
 			fps := v.GetInt(config.FPS)
-			m := app.New(scene.New(opts), fps, v.GetFloat64(config.Start), v.GetBool(config.Pausable))
+			m := app.New(sc, fps, v.GetFloat64(config.Start), v.GetBool(config.Pausable))
 			_, err = tea.NewProgram(m, tea.WithFPS(fps)).Run()
 			return err
 		},
@@ -76,10 +79,10 @@ gibson serve --listen :2222`,
 
 	pf := cmd.PersistentFlags()
 	pf.String("config", "", "config file (default: gibson.yaml in ., $XDG_CONFIG_HOME/gibson, /etc/gibson)")
-	pf.String("theme", "synth", fmt.Sprintf("color theme %v", theme.Names()))
-	pf.String("specimen", "bird", "what floats in the vessel: bird | blob")
-	pf.String("vessel", "hex", "shape of the containment vessel: hex | dodeca")
-	pf.String("tagline", "CONTAINMENT NOMINAL // WELCOME BACK, OPERATOR", "text typed under the title")
+	pf.String("theme", "synth", "color theme: "+strings.Join(scene.Themes(), " | "))
+	pf.String("specimen", "bird", "what floats in the vessel: "+strings.Join(scene.Specimens(), " | "))
+	pf.String("vessel", "hex", "shape of the containment vessel: "+strings.Join(scene.Vessels(), " | "))
+	pf.String("tagline", scene.DefaultTagline, "text typed under the title")
 	pf.Int("fps", 30, "frames per second")
 
 	cmd.Flags().Float64("start", 0, "start the sequence at this time (seconds)")

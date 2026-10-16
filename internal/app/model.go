@@ -7,8 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	r "github.com/spechtlabs/gibson/internal/render"
-	"github.com/spechtlabs/gibson/internal/scene"
+	r "github.com/spechtlabs/gibson/pkg/render"
 )
 
 // Terminal size cap: a client can claim any pty size, and the canvas is
@@ -17,9 +16,15 @@ const MaxCols, MaxRows = 400, 150
 
 type tickMsg time.Time
 
-// Model plays sc at fps frames per second, starting offset seconds in.
+// Renderer draws the frame at t seconds into a w×h cell frame, such as a
+// [scene.Scene].
+type Renderer interface {
+	Render(t float64, w, h int) *r.Frame
+}
+
+// Model plays a Renderer at fps frames per second, starting offset seconds in.
 type Model struct {
-	sc     *scene.Scene
+	sc     Renderer
 	fps    int
 	begin  time.Time
 	offset float64
@@ -32,7 +37,7 @@ type Model struct {
 
 // New returns a model playing sc. pausable is TEMP: space toggles pause
 // instead of quitting.
-func New(sc *scene.Scene, fps int, offset float64, pausable bool) *Model {
+func New(sc Renderer, fps int, offset float64, pausable bool) *Model {
 	return &Model{sc: sc, fps: fps, offset: offset, pausable: pausable}
 }
 
