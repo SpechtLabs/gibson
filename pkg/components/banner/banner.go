@@ -74,12 +74,16 @@ func (b *Banner) Apply(f *r.Frame) {
 	if blocks {
 		headRows = (font.Height + 1) / 2
 	}
-	lines := wrap(b.message, inner)
-	rows := 1 + headRows + 1 + len(lines) + 1 // padding, heading, gap, message, padding
+	// text wraps at a comfortable line length even on wide terminals
+	text := min(inner, max(blockW, 72))
+	lines := wrap(b.message, text)
+	var credit []string
 	if b.attribution != "" {
-		rows++
+		credit = wrap(b.attribution, text)
 	}
-	width := min(inner, max(blockW, len([]rune(b.heading))*2, longest(lines), len([]rune(b.attribution))))
+	// padding, heading, gap, message, attribution, padding
+	rows := 1 + headRows + 1 + len(lines) + len(credit) + 1
+	width := min(inner, max(blockW, len([]rune(b.heading))*2, longest(lines), longest(credit)))
 	x0 := (f.W-width)/2 - 2
 	y0 := max(0, (f.H-rows-2)/2)
 	b.box(f, x0, y0, width+4, rows+2)
@@ -96,8 +100,9 @@ func (b *Banner) Apply(f *r.Frame) {
 		b.text1(f, (f.W-len([]rune(l)))/2, y, l, b.text)
 		y++
 	}
-	if b.attribution != "" {
-		b.text1(f, (f.W-len([]rune(b.attribution)))/2, y, b.attribution, b.fade)
+	for _, l := range credit {
+		b.text1(f, (f.W-len([]rune(l)))/2, y, l, b.fade)
+		y++
 	}
 }
 

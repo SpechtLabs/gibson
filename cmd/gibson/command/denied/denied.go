@@ -65,7 +65,7 @@ gibson denied --quote 0`,
 func list() string {
 	var b strings.Builder
 	for i, q := range denied.Quotes {
-		fmt.Fprintf(&b, "\n  %d  %s %s", i, q.Text, q.Attribution())
+		fmt.Fprintf(&b, "\n  %2d  %s %s", i, q.Text, q.Attribution())
 	}
 	return b.String()
 }
