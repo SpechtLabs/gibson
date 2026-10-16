@@ -3,8 +3,8 @@
 #   docker compose -f deploy/compose.yaml up -d
 #   ssh -p 2222 localhost
 #
-# Configure it with GIBSON_* environment variables, or mount a config file at
-# /etc/gibson/gibson.yaml (see gibson.example.yaml).
+# Configure it with GIBSON_* environment variables, or mount a config file
+# over the image's own at /etc/gibson/gibson.yaml (see gibson.example.yaml).
 name: gibson
 
 services:

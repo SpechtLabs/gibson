@@ -1,0 +1,11 @@
+# The image's default config, at /etc/gibson/gibson.yaml. Mount your own over
+# it, or override single keys with GIBSON_* environment variables or flags
+# (see gibson.example.yaml for every key).
+theme: specht
+vessel: dodeca
+
+ssh:
+  listen: ":2222"
+  # /data is the image's only writable path: mount a volume there, and the
+  # key is generated on first start and kept.
+  host-key: /data/ssh_host_ed25519

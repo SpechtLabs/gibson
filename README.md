@@ -73,6 +73,8 @@ The image is hardened:
 - **Base:** [distroless static](https://github.com/GoogleContainerTools/distroless),
   pinned by digest. It has no shell, no package manager and no libc, only the
   static binary.
+- **Defaults:** they're a config file at `/etc/gibson/gibson.yaml`, not
+  environment variables, so a config mounted over it takes effect in full.
 - **Runtime:** it runs as uid 65532 and needs no capabilities. It works with a
   read-only root filesystem, and the only writable path is the `/data` volume,
   where the SSH host key is generated on first start.

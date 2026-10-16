@@ -49,6 +49,7 @@ dockers_v2:
       - linux/arm64
     extra_files:
       - deploy/data/README
+      - deploy/gibson.yaml
     # A snapshot loads per-platform images into the local daemon, which can't
     # hold attestations, so the SBOM and provenance come with releases only.
     sbom: "{{ if .IsSnapshot }}false{{ else }}true{{ end }}"
