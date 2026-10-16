@@ -9,8 +9,10 @@ import (
 )
 
 // Healthcheck succeeds when something on addr speaks SSH. The image has no
-// shell, so the container HEALTHCHECK runs the binary itself.
-func Healthcheck(addr string) error {
+// shell, so the container HEALTHCHECK runs the binary itself. With
+// proxyHeader it first sends a PROXY protocol header without an address, as
+// a server run [WithProxyProtocol] waits for one before it says anything.
+func Healthcheck(addr string, proxyHeader bool) error {
 	host, p, err := net.SplitHostPort(addr)
 	if err != nil {
 		return err
@@ -24,6 +26,11 @@ func Healthcheck(addr string) error {
 	}
 	defer func() { _ = c.Close() }()
 	_ = c.SetDeadline(time.Now().Add(3 * time.Second))
+	if proxyHeader {
+		if _, err := c.Write([]byte("PROXY UNKNOWN\r\n")); err != nil {
+			return err
+		}
+	}
 	banner, err := bufio.NewReader(c).ReadString('\n')
 	if err != nil {
 		return err

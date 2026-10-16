@@ -73,6 +73,8 @@ The image is hardened:
 - **Base:** [distroless static](https://github.com/GoogleContainerTools/distroless),
   pinned by digest. It has no shell, no package manager and no libc, only the
   static binary.
+- **Defaults:** they're a config file at `/etc/gibson/gibson.yaml`, not
+  environment variables, so a config mounted over it takes effect in full.
 - **Runtime:** it runs as uid 65532 and needs no capabilities. It works with a
   read-only root filesystem, and the only writable path is the `/data` volume,
   where the SSH host key is generated on first start.
@@ -103,6 +105,11 @@ everywhere:
 | `ssh.rate`         | 0.5     | new sessions per second per IP...               |
 | `ssh.burst`        | 5       | ...with this burst on top                       |
 | `ssh.max-duration` | 15m     | lifetime of a connection                        |
+
+Behind a load balancer or proxy, set `ssh.proxy-protocol: true` and have it
+send a PROXY protocol header, so the per-IP limit sees viewers' addresses
+rather than the proxy's. Only do that when nothing but the proxy can reach the
+server, since a header is trusted from anyone who sends one.
 
 Handshakes time out after 10s, and terminal sizes are capped at 400×150.
 A viewer turned away at `ssh.max-sessions` gets the scene frozen, a scan line

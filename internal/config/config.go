@@ -42,6 +42,7 @@ const (
 	Rate        = "ssh.rate"
 	Burst       = "ssh.burst"
 	MaxDuration = "ssh.max-duration"
+	ProxyProto  = "ssh.proxy-protocol"
 )
 
 // Offline render keys.

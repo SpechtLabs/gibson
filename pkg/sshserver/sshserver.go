@@ -56,6 +56,7 @@ type Server struct {
 	model    func(ssh.Session) tea.Model
 	progOpts []tea.ProgramOption
 	full     ssh.Handler
+	proxied  bool
 
 	srv *ssh.Server
 }
@@ -82,6 +83,14 @@ func WithModel(f func(ssh.Session) tea.Model) Option { return func(s *Server) { 
 func WithProgramOptions(opts ...tea.ProgramOption) Option {
 	return func(s *Server) { s.progOpts = append(s.progOpts, opts...) }
 }
+
+// WithProxyProtocol reads the PROXY protocol header (v1 or v2) a proxy in
+// front of the server puts at the start of each connection, so limits and
+// logs see the client's address rather than the proxy's. A connection
+// without a header is still served, from its own address, so only enable
+// it when nothing but the proxy can reach the server: anything else could
+// claim any address.
+func WithProxyProtocol(on bool) Option { return func(s *Server) { s.proxied = on } }
 
 // WithCapacityMessage sets what a session turned away at MaxSessions reads.
 func WithCapacityMessage(msg string) Option {
@@ -120,6 +129,7 @@ func New(opts ...Option) (*Server, error) {
 		func(srv *ssh.Server) error {
 			srv.HandshakeTimeout = lim.Handshake
 			srv.ConnCallback = connLimiter(lim.MaxConns)
+			srv.EnableProxyProtocol = s.proxied
 			return nil
 		},
 		wish.WithMiddleware(

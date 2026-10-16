@@ -25,6 +25,9 @@ ssh:
   rate: 0.5 # new sessions per second allowed per IP
   burst: 5 # burst of new sessions allowed per IP
   max-duration: 15m # maximum lifetime of a connection
+  # read the client's address from a PROXY protocol header (v1/v2), behind a
+  # load balancer that sends one; only when nothing else can reach the server
+  proxy-protocol: false
 
 # gibson render
 render:
