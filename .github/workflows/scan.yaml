@@ -37,9 +37,15 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    env:
-      IMAGE: ghcr.io/spechtlabs/gibson:${{ inputs.tag || 'latest' }}
     steps:
+      # Images are tagged with the bare version (0.1.0), the git tag the
+      # release hands over has a v (v0.1.0); accept either.
+      - name: Resolve the image
+        id: image
+        env:
+          TAG: ${{ inputs.tag || 'latest' }}
+        run: echo "ref=ghcr.io/spechtlabs/gibson:${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -53,12 +59,16 @@ jobs:
           cache: false
 
       - name: Verify the image signature
+        env:
+          IMAGE: ${{ steps.image.outputs.ref }}
         run: |
           cosign verify "${IMAGE}" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github\.com/(?i:spechtlabs/gibson)/\.github/workflows/release\.yaml@'
 
       - name: Scan with Trivy
+        env:
+          IMAGE: ${{ steps.image.outputs.ref }}
         run: trivy image --format sarif --output trivy.sarif --severity MEDIUM,HIGH,CRITICAL "${IMAGE}"
 
       - name: Upload the results to code scanning
@@ -69,4 +79,6 @@ jobs:
 
       # Fail the run, after the upload, on anything fixable and serious.
       - name: Gate on HIGH and CRITICAL
+        env:
+          IMAGE: ${{ steps.image.outputs.ref }}
         run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "${IMAGE}"
