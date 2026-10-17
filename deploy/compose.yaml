@@ -9,7 +9,7 @@ name: gibson
 
 services:
   gibson:
-    image: ghcr.io/spechtlabs/gibson:latest@sha256:3ff2ae4fbef18572240943300683312ecf749ae1a8f8fab37c9046385be029e3
+    image: ghcr.io/spechtlabs/gibson:latest@sha256:e2e2853796a62d4952f4d6d435548a8c8ebdc2725aae65f7c47b1a69d0cf4de9
     restart: unless-stopped
     ports:
       - "2222:2222"
