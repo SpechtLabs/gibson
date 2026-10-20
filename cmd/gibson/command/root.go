@@ -1,6 +1,6 @@
 // Package command builds the gibson command tree: the root command, which
-// plays the intro in the local terminal, and serve, render, music, denied
-// and healthcheck. Every subcommand lives in its own sub-package with a
+// plays the intro in the local terminal, and serve, connect, render,
+// music, denied and healthcheck. Every subcommand lives in its own sub-package with a
 // NewCommand constructor. The root owns the persistent look flags and loads the config
 // file before any command runs; each command binds its own flags to their
 // config keys when it runs.
@@ -9,19 +9,23 @@ package command
 import (
 	"context"
 	"strings"
+	"sync"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/fang/v2"
 	"github.com/spf13/cobra"
 
+	"github.com/spechtlabs/gibson/cmd/gibson/command/connect"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/denied"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/healthcheck"
-	"github.com/spechtlabs/gibson/cmd/gibson/command/music"
+	musiccmd "github.com/spechtlabs/gibson/cmd/gibson/command/music"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/render"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/serve"
 	"github.com/spechtlabs/gibson/internal/app"
 	"github.com/spechtlabs/gibson/internal/config"
+	"github.com/spechtlabs/gibson/internal/music"
 	"github.com/spechtlabs/gibson/internal/scene"
+	"github.com/spechtlabs/gibson/pkg/speaker"
 )
 
 // lookFlags maps the root's persistent flags to their config keys.
@@ -61,7 +65,9 @@ gibson serve --listen :2222`,
 			return config.Bind(v, cmd.Flags(), lookFlags)
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if err := config.Bind(v, cmd.Flags(), map[string]string{"start": config.Start, "pausable": config.Pausable}); err != nil {
+			if err := config.Bind(v, cmd.Flags(), map[string]string{
+				"start": config.Start, "pausable": config.Pausable, "music": config.Music,
+			}); err != nil {
 				return err
 			}
 			look, err := config.Look(v)
@@ -72,8 +78,15 @@ gibson serve --listen :2222`,
 			if err != nil {
 				return err
 			}
-			fps := v.GetInt(config.FPS)
-			m := app.New(sc, fps, v.GetFloat64(config.Start), v.GetBool(config.Pausable))
+			fps, start := v.GetInt(config.FPS), v.GetFloat64(config.Start)
+			m := app.New(sc, fps, start, v.GetBool(config.Pausable))
+			if v.GetBool(config.Music) {
+				stop, err := playMusic(cmd.Context(), m, start)
+				if err != nil {
+					return err
+				}
+				defer stop()
+			}
 			_, err = tea.NewProgram(m, tea.WithFPS(fps)).Run()
 			return err
 		},
@@ -89,15 +102,32 @@ gibson serve --listen :2222`,
 
 	cmd.Flags().Float64("start", 0, "start the sequence at this time (seconds)")
 	cmd.Flags().Bool("pausable", false, "space toggles pause instead of quitting (TEMP)")
+	cmd.Flags().Bool("music", true, "play the soundtrack along")
 
 	cmd.AddCommand(
 		serve.NewCommand(v, version),
 		render.NewCommand(v),
 		denied.NewCommand(v),
 		healthcheck.NewCommand(v),
-		music.NewCommand(),
+		musiccmd.NewCommand(),
+		connect.NewCommand(v),
 	)
 	return cmd
+}
+
+// playMusic plays the soundtrack from start seconds in, alongside m, and
+// starts it over when m restarts. stop ends it. A machine without audio
+// output just gets the intro.
+func playMusic(ctx context.Context, m *app.Model, start float64) (stop func(), err error) {
+	src, err := music.NewSource(start)
+	if err != nil {
+		return nil, err
+	}
+	m.OnRestart(src.Restart)
+	ctx, cancel := context.WithCancel(ctx)
+	var wg sync.WaitGroup
+	wg.Go(func() { _ = speaker.Play(ctx, src, music.Rate) })
+	return func() { cancel(); wg.Wait() }, nil
 }
 
 // Execute runs the gibson command line on os.Args with fang's styling for

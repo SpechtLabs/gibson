@@ -31,6 +31,7 @@ const (
 	FPS      = "fps"
 	Start    = "start"
 	Pausable = "pausable"
+	Music    = "music"
 )
 
 // SSH server keys; healthcheck reads Listen too.

@@ -13,6 +13,7 @@ specimen: bird # what floats in the vessel: bird | blob
 vessel: hex # shape of the containment vessel: hex | dodeca
 tagline: "CONTAINMENT NOMINAL // WELCOME BACK, OPERATOR" # text typed under the title
 fps: 30 # frames per second
+music: true # play the soundtrack along (gibson, gibson connect)
 pausable: false # TEMP: space toggles pause instead of quitting (gibson, gibson serve)
 start: 0 # start the local intro this many seconds in (gibson only)
 

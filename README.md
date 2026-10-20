@@ -20,8 +20,20 @@ Any key quits, and `r` restarts the sequence.
 The gibson has a soundtrack: "Containment Breach", an 8-bit chiptune in the
 C64 and NES vein, with pulse-width sweeps, 50 Hz arpeggios, a stepped
 triangle kick and LFSR noise drums. It hits its drop as the title decrypts.
-SSH carries bytes, not sound, so `music` streams it as an 8-bit WAV for a
-player on your end to read from the pipe:
+
+Run locally, `gibson` plays it along (`--music=false` mutes it), and `r`
+starts it over with the intro. Over SSH, `gibson connect` plays it on your
+speakers while the intro runs:
+
+```sh
+gibson connect -p 2222 gibson.example.com dodeca specht
+```
+
+Plain `ssh` can't do that by itself: SSH carries bytes, not sound. So
+`gibson connect` runs your `ssh` twice, once for the intro and once for
+`music`, which streams the soundtrack as an 8-bit WAV. Your ssh config,
+keys and known_hosts apply as usual. Without gibson installed, pipe the
+stream into any player that reads a WAV from stdin:
 
 ```sh
 # bash/zsh: music in the background, the intro in front
@@ -29,10 +41,8 @@ ssh -p 2222 gibson.example.com music | ffplay -nodisp -autoexit -loglevel quiet 
 ssh -t -p 2222 gibson.example.com; kill %1
 ```
 
-Any player that reads a WAV from stdin works, such as `mpv --no-video -`,
-`play -q -` (sox) or `aplay -q` (Linux). Leave out `-t` for `music`, since a
-pty would mangle the audio. Locally, `gibson music | ffplay -nodisp -` plays it,
-and `gibson music --out gibson.wav --dur 1m` writes a minute of it to a file.
+Leave out `-t` for `music`, since a pty would mangle the audio.
+`gibson music --out gibson.wav --dur 1m` writes a minute of it to a file.
 
 ## Run it
 
@@ -70,6 +80,7 @@ default.
 ```text
 gibson                 play the intro locally
 gibson serve           serve it over SSH
+gibson connect         watch a served gibson, with its soundtrack on your speakers
 gibson render          write a PNG frame or a GIF of the sequence
 gibson music           stream the soundtrack as a WAV on stdout
 gibson denied          preview the screen a viewer gets when the server is full
@@ -155,6 +166,7 @@ pkg/
   preview/       PNG/GIF rasterizer for frames
   sshserver/     a bounded Wish server for any Bubble Tea program
   chip/          a tracker and SID/NES-style sound chip, 8-bit PCM and WAV
+  speaker/       8-bit PCM out of this machine's speakers, without cgo
   components/    the parts a scene is built from
     specimen/    the Specimen interface        bird/ blob/
     vessel/      the Vessel interface          hex/ dodeca/

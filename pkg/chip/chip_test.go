@@ -101,3 +101,19 @@ func mustParse(t *testing.T, kit Kit, s string) Track {
 	}
 	return tr
 }
+
+func TestReadWAVHeader(t *testing.T) {
+	r := bytes.NewReader(append(WAVHeader(22050, Streaming), 1, 2, 3))
+	rate, err := ReadWAVHeader(r)
+	if err != nil || rate != 22050 {
+		t.Fatalf("rate %d, err %v", rate, err)
+	}
+	if n := r.Len(); n != 3 {
+		t.Errorf("%d bytes left after the header, want the 3 samples", n)
+	}
+	h := WAVHeader(22050, 0)
+	h[34] = 16 // 16-bit
+	if _, err := ReadWAVHeader(bytes.NewReader(h)); err == nil {
+		t.Error("took a 16-bit WAV")
+	}
+}
