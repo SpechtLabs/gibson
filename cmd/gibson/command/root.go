@@ -1,7 +1,7 @@
 // Package command builds the gibson command tree: the root command, which
-// plays the intro in the local terminal, and serve, render and healthcheck.
-// Every subcommand lives in its own sub-package with a NewCommand
-// constructor. The root owns the persistent look flags and loads the config
+// plays the intro in the local terminal, and serve, render, music, denied
+// and healthcheck. Every subcommand lives in its own sub-package with a
+// NewCommand constructor. The root owns the persistent look flags and loads the config
 // file before any command runs; each command binds its own flags to their
 // config keys when it runs.
 package command
@@ -16,6 +16,7 @@ import (
 
 	"github.com/spechtlabs/gibson/cmd/gibson/command/denied"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/healthcheck"
+	"github.com/spechtlabs/gibson/cmd/gibson/command/music"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/render"
 	"github.com/spechtlabs/gibson/cmd/gibson/command/serve"
 	"github.com/spechtlabs/gibson/internal/app"
@@ -94,6 +95,7 @@ gibson serve --listen :2222`,
 		render.NewCommand(v),
 		denied.NewCommand(v),
 		healthcheck.NewCommand(v),
+		music.NewCommand(),
 	)
 	return cmd
 }

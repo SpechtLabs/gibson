@@ -57,6 +57,7 @@ type Server struct {
 	progOpts []tea.ProgramOption
 	full     ssh.Handler
 	proxied  bool
+	commands map[string]ssh.Handler
 
 	srv *ssh.Server
 }
@@ -103,6 +104,19 @@ func WithCapacityMessage(msg string) Option {
 // MaxSessions, so keep it short and cheap.
 func WithCapacityHandler(h ssh.Handler) Option { return func(s *Server) { s.full = h } }
 
+// WithCommand runs h instead of the program for sessions whose command
+// starts with name (ssh host name), with or without a pty. It's for what
+// isn't a terminal UI, such as a stream to pipe into something else. These
+// sessions count against MaxSessions like any other.
+func WithCommand(name string, h ssh.Handler) Option {
+	return func(s *Server) {
+		if s.commands == nil {
+			s.commands = map[string]ssh.Handler{}
+		}
+		s.commands[name] = h
+	}
+}
+
 // ErrNoModel is returned by [New] without [WithModel].
 var ErrNoModel = errors.New("sshserver: no model; use WithModel")
 
@@ -141,6 +155,7 @@ func New(opts ...Option) (*Server, error) {
 				}),
 			),
 			activeterm.Middleware(), // bubbletea needs a pty
+			commandRouter(s.commands),
 			sessionLimiter(&sessions, lim.MaxSessions, s.full),
 			ratelimiter.Middleware(ratelimiter.NewRateLimiter(rate.Limit(lim.PerIPRate), lim.PerIPBurst, 4096)),
 			logging.Middleware(),

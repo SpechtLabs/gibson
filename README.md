@@ -15,6 +15,25 @@ ssh -t -p 2222 gibson.example.com dodeca specht   # pick the look per session
 
 Any key quits, and `r` restarts the sequence.
 
+## Sound
+
+The gibson has a soundtrack: "Containment Breach", an 8-bit chiptune in the
+C64 and NES vein, with pulse-width sweeps, 50 Hz arpeggios, a stepped
+triangle kick and LFSR noise drums. It hits its drop as the title decrypts.
+SSH carries bytes, not sound, so `music` streams it as an 8-bit WAV for a
+player on your end to read from the pipe:
+
+```sh
+# bash/zsh: music in the background, the intro in front
+ssh -p 2222 gibson.example.com music | ffplay -nodisp -autoexit -loglevel quiet - &
+ssh -t -p 2222 gibson.example.com; kill %1
+```
+
+Any player that reads a WAV from stdin works, such as `mpv --no-video -`,
+`play -q -` (sox) or `aplay -q` (Linux). Leave out `-t` for `music`, since a
+pty would mangle the audio. Locally, `gibson music | ffplay -nodisp -` plays it,
+and `gibson music --out gibson.wav --dur 1m` writes a minute of it to a file.
+
 ## Run it
 
 ```sh
@@ -52,6 +71,7 @@ default.
 gibson                 play the intro locally
 gibson serve           serve it over SSH
 gibson render          write a PNG frame or a GIF of the sequence
+gibson music           stream the soundtrack as a WAV on stdout
 gibson denied          preview the screen a viewer gets when the server is full
 gibson healthcheck     exit 0 if the SSH server answers (container health check)
 ```
@@ -116,7 +136,8 @@ A viewer turned away at `ssh.max-sessions` gets the scene frozen, a scan line
 sweeping down it and a red ACCESS DENIED with a movie line, picked at random
 from `internal/denied/quotes.go`; `gibson denied` previews it.
 Bandwidth is about 0.5 MB/s per viewer at 30 fps in a 120×40 terminal, so
-`fps: 20` is kinder over the internet.
+`fps: 20` is kinder over the internet. A `music` stream is a session of its
+own, so a viewer listening along takes two, but it's only 22 KB/s.
 
 ## Layout
 
@@ -133,6 +154,7 @@ pkg/
   font/          5×7 block font for big lettering
   preview/       PNG/GIF rasterizer for frames
   sshserver/     a bounded Wish server for any Bubble Tea program
+  chip/          a tracker and SID/NES-style sound chip, 8-bit PCM and WAV
   components/    the parts a scene is built from
     specimen/    the Specimen interface        bird/ blob/
     vessel/      the Vessel interface          hex/ dodeca/
@@ -145,6 +167,7 @@ internal/
   scene/         the intro: timeline, layout, and the catalog of names
   app/           the Bubble Tea model
   denied/        the screen a viewer turned away at capacity gets
+  music/         the soundtrack, and the SSH handler that streams it
   config/        viper settings
 ```
 

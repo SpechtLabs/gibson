@@ -17,6 +17,7 @@ import (
 	"github.com/spechtlabs/gibson/internal/app"
 	"github.com/spechtlabs/gibson/internal/config"
 	"github.com/spechtlabs/gibson/internal/denied"
+	"github.com/spechtlabs/gibson/internal/music"
 	"github.com/spechtlabs/gibson/pkg/sshserver"
 )
 
@@ -42,6 +43,7 @@ func NewCommand(v *viper.Viper, version string) *cobra.Command {
 		Long: `Serves the intro as an SSH app: every connection gets its own scene. Words
 passed as the SSH command pick the look for that session, overriding the
 configured one, e.g. ssh -t host -p 2222 dodeca specht.
+ssh -p 2222 host music | ffplay - streams the 8-bit soundtrack as a WAV.
 
 The server is open to anyone but bounded everywhere: open connections,
 concurrent sessions, new sessions per IP, connection lifetime and terminal
@@ -87,6 +89,8 @@ size.`,
 				// a turned-away viewer gets the scene frozen and a line from
 				// Hackers; gibson denied previews it
 				sshserver.WithCapacityHandler(denied.Handler(look, app.MaxCols, app.MaxRows)),
+				// SSH carries no sound: ssh host music | ffplay -
+				sshserver.WithCommand(music.Command, music.Handler),
 			)
 			if err != nil {
 				return err
