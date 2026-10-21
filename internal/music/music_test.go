@@ -1,6 +1,7 @@
 package music
 
 import (
+	"bytes"
 	"math"
 	"testing"
 
@@ -47,5 +48,19 @@ func TestDropLandsOnTheTitle(t *testing.T) {
 	}
 	if at := float64(introOf) * s.RowSeconds(); math.Abs(at-4.8) > 0.15 {
 		t.Errorf("the drop lands at %.2f s, not with the title", at)
+	}
+}
+
+func TestStreamSurvivesAPty(t *testing.T) {
+	// a pty session's stderr turns newline bytes into CRLF
+	if bytes.IndexByte(chip.WAVHeader(Rate, chip.Streaming), '\n') >= 0 {
+		t.Errorf("the WAV header at %d Hz has a newline byte", Rate)
+	}
+	var b bytes.Buffer
+	if _, err := (noNewlines{&b}).Write([]byte{9, 10, 11, '\n'}); err != nil {
+		t.Fatal(err)
+	}
+	if got := b.Bytes(); !bytes.Equal(got, []byte{9, 11, 11, 11}) {
+		t.Errorf("got %v", got)
 	}
 }

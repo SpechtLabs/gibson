@@ -4,6 +4,7 @@ package serve
 import (
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/spechtlabs/gibson/internal/config"
 	"github.com/spechtlabs/gibson/internal/denied"
 	"github.com/spechtlabs/gibson/internal/music"
+	"github.com/spechtlabs/gibson/internal/scene"
 	"github.com/spechtlabs/gibson/pkg/sshserver"
 )
 
@@ -43,7 +45,8 @@ func NewCommand(v *viper.Viper, version string) *cobra.Command {
 		Long: `Serves the intro as an SSH app: every connection gets its own scene. Words
 passed as the SSH command pick the look for that session, overriding the
 configured one, e.g. ssh -t host -p 2222 dodeca specht.
-ssh -p 2222 host music | ffplay - streams the 8-bit soundtrack as a WAV.
+ssh host music | ffplay - streams the 8-bit soundtrack as a WAV, and
+ssh -t host music 2>| ffplay - plays it beside the intro.
 
 The server is open to anyone but bounded everywhere: open connections,
 concurrent sessions, new sessions per IP, connection lifetime and terminal
@@ -74,12 +77,7 @@ size.`,
 					MaxDuration: v.GetDuration(config.MaxDuration),
 					Handshake:   10 * time.Second,
 				}),
-				sshserver.WithModel(func(sess ssh.Session) tea.Model {
-					// words passed as the SSH command pick the look; they're
-					// all known names, so this can't fail
-					sc, _ := look.Override(sess.Command()).New()
-					return app.New(sc, fps, 0, pausable)
-				}),
+				sshserver.WithModel(model(look, fps, pausable)),
 				sshserver.WithProgramOptions(
 					tea.WithFPS(fps),
 					// ssh clients rarely forward COLORTERM, and the whole look
@@ -89,7 +87,8 @@ size.`,
 				// a turned-away viewer gets the scene frozen and a line from
 				// Hackers; gibson denied previews it
 				sshserver.WithCapacityHandler(denied.Handler(look, app.MaxCols, app.MaxRows)),
-				// SSH carries no sound: ssh host music | ffplay -
+				// SSH carries no sound: ssh host music | ffplay -, or with -t
+				// beside the intro, on stderr
 				sshserver.WithCommand(music.Command, music.Handler),
 			)
 			if err != nil {
@@ -113,4 +112,18 @@ size.`,
 	f.Bool("proxy-protocol", false, "read the client's address from a PROXY protocol header, behind a load balancer that sends one (only when nothing else can reach the server)")
 	f.Bool("pausable", false, "space toggles pause instead of quitting (TEMP)")
 	return cmd
+}
+
+// model makes a session's intro. Words passed as the SSH command pick the
+// look, and music plays the soundtrack beside it, on stderr.
+func model(look scene.Look, fps int, pausable bool) func(ssh.Session) tea.Model {
+	return func(sess ssh.Session) tea.Model {
+		// Override ignores what isn't a known name, so this can't fail
+		sc, _ := look.Override(sess.Command()).New()
+		m := app.New(sc, fps, 0, pausable)
+		if slices.Contains(sess.Command(), music.Command) {
+			m.OnRestart(music.Alongside(sess))
+		}
+		return m
+	}
 }

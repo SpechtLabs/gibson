@@ -12,13 +12,13 @@ import (
 // (In a file of its own: sshserver.go imports wish's recover package,
 // which hides the builtin there.)
 
-// commandRouter hands sessions that ask for one of cmds to it, guarded
-// against panics as the program is, and everything else on.
+// commandRouter hands sessions without a pty that ask for one of cmds to
+// it, guarded against panics as the program is, and everything else on.
 func commandRouter(cmds map[string]ssh.Handler) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(s ssh.Session) {
 			args := s.Command()
-			if len(args) == 0 || cmds[args[0]] == nil {
+			if _, _, pty := s.Pty(); pty || len(args) == 0 || cmds[args[0]] == nil {
 				next(s)
 				return
 			}

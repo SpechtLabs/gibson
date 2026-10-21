@@ -103,9 +103,10 @@ func WithCapacityMessage(msg string) Option {
 // MaxSessions, so keep it short and cheap.
 func WithCapacityHandler(h ssh.Handler) Option { return func(s *Server) { s.full = h } }
 
-// WithCommand runs h instead of the program for sessions whose command
-// starts with name (ssh host name), with or without a pty. It's for what
-// isn't a terminal UI, such as a stream to pipe into something else. These
+// WithCommand runs h instead of the program for sessions without a pty
+// whose command starts with name (ssh host name). It's for what isn't a
+// terminal UI, such as a stream to pipe into something else; with a pty
+// (ssh -t host name) the program runs, and name is one of its words. These
 // sessions count against MaxSessions like any other.
 func WithCommand(name string, h ssh.Handler) Option {
 	return func(s *Server) {

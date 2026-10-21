@@ -1,12 +1,15 @@
 // Package music is the gibson's soundtrack: a chiptune played by
 // pkg/chip, the SSH handler that streams it, and playback on this
 // machine's speakers. SSH carries bytes, not sound, so the stream is an
-// 8-bit WAV on stdout, for gibson connect to play, or a player:
+// 8-bit WAV, for gibson connect to play, or a player: on stdout alone, or
+// on stderr beside the intro on the terminal (fish's 2>|, bash's 2> >()):
 //
 //	ssh -p 2222 host music | ffplay -nodisp -autoexit -loglevel quiet -
+//	ssh -t -p 2222 host music 2>| ffplay -nodisp -autoexit -loglevel quiet -
 package music
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -14,7 +17,6 @@ import (
 	"time"
 
 	"charm.land/ssh"
-	"charm.land/wish/v2"
 
 	"github.com/spechtlabs/gibson/pkg/chip"
 	"github.com/spechtlabs/gibson/pkg/speaker"
@@ -44,17 +46,31 @@ func Play(ctx context.Context, w io.Writer) error {
 	return chip.Stream(ctx, w, p, Rate, ahead)
 }
 
-// Handler streams the music to an SSH session. It needs a session
-// without a pty: a pty would turn every newline byte of the audio into
-// CRLF.
+// Handler streams the music to an SSH session without a pty.
 func Handler(sess ssh.Session) {
-	if _, _, ok := sess.Pty(); ok {
-		wish.Fatalln(sess, "music is an audio stream: leave out -t and pipe it into a player, e.g.\n"+
-			"  ssh <host> music | ffplay -nodisp -autoexit -loglevel quiet -")
-		return
-	}
 	_, _ = fmt.Fprintf(sess.Stderr(), "♪ now playing: %q, %d Hz 8-bit mono, looping\n", Title, Rate)
 	_ = Play(sess.Context(), sess)
+}
+
+// Alongside streams the music over sess's stderr, beside the intro on its
+// pty, and returns what starts the song over with the intro. A pty
+// session's stderr turns every newline byte into CRLF, so the stream has
+// none: the header has none at Rate, and samples of 10 go out as 11, a
+// step no one hears.
+func Alongside(sess ssh.Session) (restart func()) {
+	src, err := NewSource(0)
+	if err != nil { // the song is fixed, and tested to play
+		return func() {}
+	}
+	go func() { _ = chip.Stream(sess.Context(), noNewlines{sess.Stderr()}, src, Rate, ahead) }()
+	return src.Restart
+}
+
+// noNewlines writes to w with every newline byte one higher.
+type noNewlines struct{ w io.Writer }
+
+func (n noNewlines) Write(b []byte) (int, error) {
+	return n.w.Write(bytes.ReplaceAll(b, []byte{'\n'}, []byte{'\n' + 1}))
 }
 
 // Source is the song as PCM for the speakers, which can start over.

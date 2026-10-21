@@ -83,11 +83,12 @@ func ReadWAVHeader(r io.Reader) (rate int, err error) {
 	}
 }
 
-// Stream writes p as a WAV of unknown length to w, paced to play in real
+// Stream writes pcm, 8-bit unsigned mono at rate, which never runs out
+// (a [Player] doesn't), as a WAV of unknown length to w, paced to play in real
 // time with lead of it buffered ahead, until ctx is done or w stops taking
 // writes. Pacing keeps a listener in step with whatever started alongside
 // it, rather than the song racing as far ahead as the pipe will buffer.
-func Stream(ctx context.Context, w io.Writer, p *Player, rate int, lead time.Duration) error {
+func Stream(ctx context.Context, w io.Writer, pcm io.Reader, rate int, lead time.Duration) error {
 	if _, err := w.Write(WAVHeader(rate, Streaming)); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}
@@ -101,7 +102,9 @@ func Stream(ctx context.Context, w io.Writer, p *Player, rate int, lead time.Dur
 		if due > sent {
 			buf = buf[:0]
 			buf = append(buf, make([]byte, due-sent)...)
-			_, _ = p.Read(buf)
+			if _, err := io.ReadFull(pcm, buf); err != nil {
+				return fmt.Errorf("read: %w", err)
+			}
 			if _, err := w.Write(buf); err != nil {
 				return fmt.Errorf("write: %w", err)
 			}

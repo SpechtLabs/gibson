@@ -29,19 +29,22 @@ speakers while the intro runs:
 gibson connect -p 2222 gibson.example.com dodeca specht
 ```
 
-Plain `ssh` can't do that by itself: SSH carries bytes, not sound. So
-`gibson connect` runs your `ssh` twice, once for the intro and once for
-`music`, which streams the soundtrack as an 8-bit WAV. Your ssh config,
-keys and known_hosts apply as usual. Without gibson installed, pipe the
-stream into any player that reads a WAV from stdin:
+Plain `ssh` can't play it for you, since SSH carries bytes, not sound,
+but it can carry the soundtrack as an 8-bit WAV for a player to pick up.
+Add the word `music` and the intro sends one over stderr while it runs on
+your terminal, so all it takes is stderr piped into a player:
 
 ```sh
-# bash/zsh: music in the background, the intro in front
-ssh -p 2222 gibson.example.com music | ffplay -nodisp -autoexit -loglevel quiet - &
-ssh -t -p 2222 gibson.example.com; kill %1
+# fish
+ssh -t -p 2222 gibson.example.com music dodeca 2>| ffplay -nodisp -autoexit -loglevel quiet -
+# bash/zsh
+ssh -t -p 2222 gibson.example.com music dodeca 2> >(ffplay -nodisp -autoexit -loglevel quiet -)
 ```
 
-Leave out `-t` for `music`, since a pty would mangle the audio.
+Without `-t`, `music` streams the WAV on stdout instead, for
+`ssh -p 2222 gibson.example.com music | ffplay -nodisp -`. `gibson connect`
+uses that stream from a second `ssh`, so your ssh config, keys and
+known_hosts apply as usual.
 `gibson music --out gibson.wav --dur 1m` writes a minute of it to a file.
 
 ## Run it
@@ -147,8 +150,9 @@ A viewer turned away at `ssh.max-sessions` gets the scene frozen, a scan line
 sweeping down it and a red ACCESS DENIED with a movie line, picked at random
 from `internal/denied/quotes.go`; `gibson denied` previews it.
 Bandwidth is about 0.5 MB/s per viewer at 30 fps in a 120×40 terminal, so
-`fps: 20` is kinder over the internet. A `music` stream is a session of its
-own, so a viewer listening along takes two, but it's only 22 KB/s.
+`fps: 20` is kinder over the internet. Music adds only 22 KB/s; it rides
+along in the intro's session over stderr, though `gibson connect` and the
+stdout stream open a session of their own, so those viewers take two.
 
 ## Layout
 
