@@ -2,6 +2,7 @@ package sshserver
 
 import (
 	"runtime/debug"
+	"strings"
 
 	"charm.land/log/v2"
 	"charm.land/ssh"
@@ -27,6 +28,20 @@ func commandRouter(cmds map[string]ssh.Handler) wish.Middleware {
 				}
 			}()
 			cmds[args[0]](s)
+		}
+	}
+}
+
+// needTerm turns away sessions without a pty, which the program needs,
+// saying how to get one: ssh allocates one for a command only with -t.
+func needTerm() wish.Middleware {
+	return func(next ssh.Handler) ssh.Handler {
+		return func(s ssh.Session) {
+			if _, _, ok := s.Pty(); ok {
+				next(s)
+				return
+			}
+			wish.Fatalf(s, "gibson needs a terminal; ssh allocates one for a command only with -t:\n  ssh -t -p <port> <host> %s\n", strings.Join(s.Command(), " "))
 		}
 	}
 }

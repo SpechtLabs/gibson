@@ -17,7 +17,6 @@ import (
 	"charm.land/log/v2"
 	"charm.land/ssh"
 	"charm.land/wish/v2"
-	"charm.land/wish/v2/activeterm"
 	bm "charm.land/wish/v2/bubbletea"
 	"charm.land/wish/v2/logging"
 	"charm.land/wish/v2/ratelimiter"
@@ -154,7 +153,7 @@ func New(opts ...Option) (*Server, error) {
 					return tea.NewProgram(s.model(sess), opts...)
 				}),
 			),
-			activeterm.Middleware(), // bubbletea needs a pty
+			needTerm(),
 			commandRouter(s.commands),
 			sessionLimiter(&sessions, lim.MaxSessions, s.full),
 			ratelimiter.Middleware(ratelimiter.NewRateLimiter(rate.Limit(lim.PerIPRate), lim.PerIPBurst, 4096)),
