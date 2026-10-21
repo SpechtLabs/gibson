@@ -1,6 +1,11 @@
+//go:build !nosound
+
 // Package speaker plays 8-bit unsigned mono PCM on the machine's audio
 // output with oto: Core Audio on macOS, PulseAudio (or ALSA) on Linux,
-// all without cgo.
+// all without cgo. On Linux, oto loads those libraries at run time with
+// purego, which links the binary dynamically against libc, even with
+// CGO_ENABLED=0; the nosound build tag leaves sound out to keep it static,
+// as the container image needs.
 package speaker
 
 import (
