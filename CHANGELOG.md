@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.3](https://github.com/SpechtLabs/gibson/compare/v0.1.2...v0.1.3) (2026-10-21)
+
+
+### Features
+
+* an 8-bit chiptune soundtrack, streamed over SSH and played on your speakers ([#19](https://github.com/SpechtLabs/gibson/issues/19)) ([ac9a581](https://github.com/SpechtLabs/gibson/commit/ac9a581b02bfddbde5e4fb0ca07441bca7ad8b88))
+
+
+### Bug Fixes
+
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to 5167571 ([#17](https://github.com/SpechtLabs/gibson/issues/17)) ([7fcc5c5](https://github.com/SpechtLabs/gibson/commit/7fcc5c5fe2db98f2b9624d4219c0e705ae0be4ad))
+* **deps:** update go toolchain directive to v1.27.3 ([#23](https://github.com/SpechtLabs/gibson/issues/23)) ([d29e5ac](https://github.com/SpechtLabs/gibson/commit/d29e5ac5d353d12e8f190cc8b325dc23cb7f6058))
+
 ## [0.1.2](https://github.com/SpechtLabs/gibson/compare/v0.1.1...v0.1.2) (2026-10-16)
 
 
