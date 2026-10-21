@@ -15,6 +15,38 @@ ssh -t -p 2222 gibson.example.com dodeca specht   # pick the look per session
 
 Any key quits, and `r` restarts the sequence.
 
+## Sound
+
+The gibson has a soundtrack: "Containment Breach", an 8-bit chiptune in the
+C64 and NES vein, with pulse-width sweeps, 50 Hz arpeggios, a stepped
+triangle kick and LFSR noise drums. It hits its drop as the title decrypts.
+
+Run locally, `gibson` plays it along (`--music=false` mutes it), and `r`
+starts it over with the intro. Over SSH, `gibson connect` plays it on your
+speakers while the intro runs:
+
+```sh
+gibson connect -p 2222 gibson.example.com dodeca specht
+```
+
+Plain `ssh` can't play it for you, since SSH carries bytes, not sound,
+but it can carry the soundtrack as an 8-bit WAV for a player to pick up.
+Add the word `music` and the intro sends one over stderr while it runs on
+your terminal, so all it takes is stderr piped into a player:
+
+```sh
+# fish
+ssh -t -p 2222 gibson.example.com music dodeca 2>| ffplay -nodisp -autoexit -loglevel quiet -
+# bash/zsh
+ssh -t -p 2222 gibson.example.com music dodeca 2> >(ffplay -nodisp -autoexit -loglevel quiet -)
+```
+
+Without `-t`, `music` streams the WAV on stdout instead, for
+`ssh -p 2222 gibson.example.com music | ffplay -nodisp -`. `gibson connect`
+uses that stream from a second `ssh`, so your ssh config, keys and
+known_hosts apply as usual.
+`gibson music --out gibson.wav --dur 1m` writes a minute of it to a file.
+
 ## Run it
 
 ```sh
@@ -51,7 +83,9 @@ default.
 ```text
 gibson                 play the intro locally
 gibson serve           serve it over SSH
+gibson connect         watch a served gibson, with its soundtrack on your speakers
 gibson render          write a PNG frame or a GIF of the sequence
+gibson music           stream the soundtrack as a WAV on stdout
 gibson denied          preview the screen a viewer gets when the server is full
 gibson healthcheck     exit 0 if the SSH server answers (container health check)
 ```
@@ -116,7 +150,9 @@ A viewer turned away at `ssh.max-sessions` gets the scene frozen, a scan line
 sweeping down it and a red ACCESS DENIED with a movie line, picked at random
 from `internal/denied/quotes.go`; `gibson denied` previews it.
 Bandwidth is about 0.5 MB/s per viewer at 30 fps in a 120×40 terminal, so
-`fps: 20` is kinder over the internet.
+`fps: 20` is kinder over the internet. Music adds only 22 KB/s; it rides
+along in the intro's session over stderr, though `gibson connect` and the
+stdout stream open a session of their own, so those viewers take two.
 
 ## Layout
 
@@ -133,6 +169,8 @@ pkg/
   font/          5×7 block font for big lettering
   preview/       PNG/GIF rasterizer for frames
   sshserver/     a bounded Wish server for any Bubble Tea program
+  chip/          a tracker and SID/NES-style sound chip, 8-bit PCM and WAV
+  speaker/       8-bit PCM out of this machine's speakers, without cgo
   components/    the parts a scene is built from
     specimen/    the Specimen interface        bird/ blob/
     vessel/      the Vessel interface          hex/ dodeca/
@@ -145,6 +183,7 @@ internal/
   scene/         the intro: timeline, layout, and the catalog of names
   app/           the Bubble Tea model
   denied/        the screen a viewer turned away at capacity gets
+  music/         the soundtrack, and the SSH handler that streams it
   config/        viper settings
 ```
 

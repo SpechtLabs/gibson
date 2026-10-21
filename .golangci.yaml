@@ -81,11 +81,12 @@ linters:
         text: "^nilcheck:"
 
       # Wall-clock time is the point: it drives the animation, paces the
-      # denied screen's scan line and bounds the health check's dial.
+      # denied screen's scan line and the music stream, polls the speaker, and
+      # bounds the health check's dial.
       - linters:
           - golint-sl
         text: "^clockinterface:"
-        path: ^(internal/(app|denied)|pkg/sshserver)/
+        path: ^(internal/(app|denied)|pkg/(sshserver|chip|speaker))/
 
       # The renderer and the components are per-pixel loops over cells,
       # sub-pixels and glyph rows, tuned for how they look rather than how

@@ -23,6 +23,28 @@ builds:
       # from the VCS info the Go toolchain embeds.
       - -X=main.version={{ .Version }}
 
+  # The container image's: it only serves, and sound (oto loads the audio
+  # libraries with purego) would link it dynamically against libc, which
+  # distroless static doesn't have.
+  - id: gibson-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    tags:
+      - nosound
+    binary: gibson
+    main: ./cmd/gibson
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X=main.version={{ .Version }}
+
 archives:
   - id: gibson
     ids:
@@ -37,7 +59,7 @@ checksum:
 dockers_v2:
   - id: gibson
     ids:
-      - gibson
+      - gibson-server
     images:
       - ghcr.io/spechtlabs/gibson
     tags:

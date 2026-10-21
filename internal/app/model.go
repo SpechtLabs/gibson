@@ -33,6 +33,8 @@ type Model struct {
 
 	pausable bool // TEMP: space toggles pause
 	paused   bool
+
+	onRestart func()
 }
 
 // New returns a model playing sc. pausable is TEMP: space toggles pause
@@ -42,6 +44,13 @@ func New(sc Renderer, fps int, offset float64, pausable bool) *Model {
 }
 
 // now is the sequence time; while paused it stays frozen at offset.
+// OnRestart has f run whenever r restarts the sequence, such as to start
+// its music over with it.
+func (m *Model) OnRestart(f func()) *Model {
+	m.onRestart = f
+	return m
+}
+
 func (m *Model) now() float64 {
 	if m.paused {
 		return m.offset
@@ -66,6 +75,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case msg.String() == "r":
 			m.begin, m.offset = time.Now(), 0
+			if m.onRestart != nil {
+				m.onRestart()
+			}
 			return m, nil
 		case m.pausable && msg.String() == "space":
 			m.offset = m.now()
