@@ -20,7 +20,7 @@ env:
   # leaves it out of its cache key, so every new mise release finds an older
   # binary in the restored cache and downloads it again.
   # renovate: datasource=github-releases depName=jdx/mise extractVersion=^v(?<version>.+)$
-  MISE_VERSION: 2026.10.20
+  MISE_VERSION: 2026.10.21
   # Every tool a CI job runs, installed in every job. mise-action keys its
   # cache on install_args, so one list means one cache.
   MISE_TOOLS: go golangci-lint yamllint actionlint shellcheck zizmor hadolint goreleaser trivy
