@@ -5,7 +5,7 @@ go 1.26.8
 toolchain go1.27.3
 
 require (
-	charm.land/bubbletea/v2 v2.1.0
+	charm.land/bubbletea/v2 v2.1.1
 	charm.land/fang/v2 v2.0.1
 	charm.land/log/v2 v2.0.1
 	charm.land/ssh v0.4.3
