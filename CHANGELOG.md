@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.4](https://github.com/SpechtLabs/gibson/compare/v0.1.3...v0.1.4) (2026-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to 18f4cc2 ([#33](https://github.com/SpechtLabs/gibson/issues/33)) ([81dace5](https://github.com/SpechtLabs/gibson/commit/81dace55ba169cad2335083c9810debad3eb813e))
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to 25ac8f0 ([#46](https://github.com/SpechtLabs/gibson/issues/46)) ([44c435c](https://github.com/SpechtLabs/gibson/commit/44c435c31a3b2b3aa6d86478874ae57212d534d8))
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to d620678 ([#24](https://github.com/SpechtLabs/gibson/issues/24)) ([9b26349](https://github.com/SpechtLabs/gibson/commit/9b26349f13aab6b4c39083252d3f65f977be80f6))
+* **deps:** update module charm.land/bubbletea/v2 to v2.1.1 ([#41](https://github.com/SpechtLabs/gibson/issues/41)) ([7ff44c3](https://github.com/SpechtLabs/gibson/commit/7ff44c3723c946da9626c1ec1d0881890b5b839a))
+
 ## [0.1.3](https://github.com/SpechtLabs/gibson/compare/v0.1.2...v0.1.3) (2026-10-21)
 
 
