@@ -27,7 +27,7 @@ hadolint = "2.15.1"
 zizmor = "1.31.1"
 
 # Release tooling
-goreleaser = "2.18.3"
+goreleaser = "2.19.0"
 cosign = "3.1.4"
 # Scans the published image for known vulnerabilities (see the scan task).
 trivy = "0.76.1"
