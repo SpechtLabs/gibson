@@ -15,7 +15,7 @@ require (
 	github.com/ebitengine/oto/v3 v3.5.1
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/spf13/viper v1.21.0
 	golang.org/x/image v0.47.0
 	golang.org/x/time v0.16.0
