@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.4](https://github.com/SpechtLabs/gibson/compare/v0.1.3...v0.1.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to 18f4cc2 ([#33](https://github.com/SpechtLabs/gibson/issues/33)) ([81dace5](https://github.com/SpechtLabs/gibson/commit/81dace55ba169cad2335083c9810debad3eb813e))
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to 25ac8f0 ([#46](https://github.com/SpechtLabs/gibson/issues/46)) ([44c435c](https://github.com/SpechtLabs/gibson/commit/44c435c31a3b2b3aa6d86478874ae57212d534d8))
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to aafe993 ([#67](https://github.com/SpechtLabs/gibson/issues/67)) ([c7b2e38](https://github.com/SpechtLabs/gibson/commit/c7b2e3820adac937f9f819ab50802a9caa4ffe68))
+* **deps:** update gcr.io/distroless/static-debian13:nonroot docker digest to d620678 ([#24](https://github.com/SpechtLabs/gibson/issues/24)) ([9b26349](https://github.com/SpechtLabs/gibson/commit/9b26349f13aab6b4c39083252d3f65f977be80f6))
+* **deps:** update go toolchain directive to v1.27.4 ([#63](https://github.com/SpechtLabs/gibson/issues/63)) ([340cea2](https://github.com/SpechtLabs/gibson/commit/340cea211976b3f8964a4cd9d71a7974d666d4a4))
+* **deps:** update module charm.land/bubbletea/v2 to v2.1.1 ([#41](https://github.com/SpechtLabs/gibson/issues/41)) ([7ff44c3](https://github.com/SpechtLabs/gibson/commit/7ff44c3723c946da9626c1ec1d0881890b5b839a))
+* **deps:** update module github.com/spf13/pflag to v1.1.0 ([#57](https://github.com/SpechtLabs/gibson/issues/57)) ([0dbb594](https://github.com/SpechtLabs/gibson/commit/0dbb5942a470cb03780b986f673b34de6e8f21fb))
+* **deps:** update module golang.org/x/crypto to v0.59.0 [security] ([#64](https://github.com/SpechtLabs/gibson/issues/64)) ([52a98ab](https://github.com/SpechtLabs/gibson/commit/52a98ab905825115057902dcd03b9e153ddf0834))
+* **deps:** update module golang.org/x/image to v0.48.0 ([#60](https://github.com/SpechtLabs/gibson/issues/60)) ([d2d8f0c](https://github.com/SpechtLabs/gibson/commit/d2d8f0c178a71739859107018f4a9d3a76bb28d9))
+
 ## [0.1.3](https://github.com/SpechtLabs/gibson/compare/v0.1.2...v0.1.3) (2026-10-21)
 
 
