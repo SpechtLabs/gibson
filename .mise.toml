@@ -28,7 +28,7 @@ zizmor = "1.33.1"
 
 # Release tooling
 goreleaser = "2.18.3"
-cosign = "3.1.4"
+cosign = "3.1.5"
 # Scans the published image for known vulnerabilities (see the scan task).
 trivy = "0.76.2"
 
